@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FinVault – Compliance Officer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-name">Fin<span>Vault</span></div>
+      <div class="brand-sub">STOCK MANAGEMENT SYSTEM</div>
+    </div>
+    <div class="sidebar-role-pill">COMPLIANCE OFFICER</div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Overview</div>
+      <div class="nav-item active" onclick="showView('dashboard')"><span class="nav-icon">🏠</span> Dashboard</div>
+      <div class="nav-section-label">Reviews</div>
+      <div class="nav-item" onclick="showView('reviews')"><span class="nav-icon">📋</span> Compliance Reviews <span class="nav-badge">9</span></div>
+      <div class="nav-item" onclick="showView('findings')"><span class="nav-icon">🔎</span> Audit Findings</div>
+      <div class="nav-section-label">Policy</div>
+      <div class="nav-item" onclick="showView('policies')"><span class="nav-icon">📜</span> Issue Policy Update</div>
+      <div class="nav-item" onclick="showView('policy-history')"><span class="nav-icon">📁</span> Policy History</div>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="sidebar-logout" onclick="window.location.href='index.html'">⬅ Switch Role</button>
+    </div>
+  </aside>
+
+  <div class="main-wrap">
+    <div class="ticker-wrap"><div class="ticker-inner" id="ticker"></div></div>
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-date" id="topbar-date"></div>
+      <div class="topbar-avatar">CO</div>
+    </div>
+    <div class="page-content">
+
+      <!-- ══ Dashboard ══ -->
+      <div class="view active" id="view-dashboard">
+        <div class="page-header">
+          <div class="page-header-left">
+            <h2>Compliance Officer Dashboard</h2>
+            <p>Monitor compliance status, issue regulatory policies, review audit findings</p>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('modal-policy-update')">＋ Issue Policy Update</button>
+        </div>
+        <div class="stats-row">
+          <div class="stat-card" style="--accent:rgba(75,142,240,.2)"><div class="stat-label">Open Compliance Reviews</div><div class="stat-value">9</div><div class="stat-change down">▼ From Auditor</div></div>
+          <div class="stat-card" style="--accent:rgba(46,196,122,.2)"><div class="stat-label">Cleared This Month</div><div class="stat-value">41</div><div class="stat-change up">▲ Compliant</div></div>
+          <div class="stat-card" style="--accent:rgba(224,85,85,.2)"><div class="stat-label">Violations Found</div><div class="stat-value">3</div><div class="stat-change down">▼ Action required</div></div>
+          <div class="stat-card" style="--accent:rgba(155,109,240,.2)"><div class="stat-label">Active Policies</div><div class="stat-value">18</div><div class="stat-change neutral">↔ 3 updated this week</div></div>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Compliance Reviews from Auditor</div><span class="badge badge-blue">9 New</span></div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead><tr><th>Review ID</th><th>Trade ID</th><th>Risk</th><th>Concern</th><th>Status</th><th>Action</th></tr></thead>
+                <tbody>
+                  <tr><td class="mono">CRV-0018</td><td class="mono">TRD-0088</td><td><span class="badge badge-red">High</span></td><td>Volume anomaly</td><td><span class="badge badge-amber">Open</span></td><td><button class="btn btn-sm btn-outline" onclick="openModal('modal-compliance-action')">Review</button></td></tr>
+                  <tr><td class="mono">CRV-0017</td><td class="mono">TRD-0083</td><td><span class="badge badge-amber">Medium</span></td><td>Repeat sell pattern</td><td><span class="badge badge-amber">Open</span></td><td><button class="btn btn-sm btn-outline" onclick="openModal('modal-compliance-action')">Review</button></td></tr>
+                  <tr><td class="mono">CRV-0016</td><td class="mono">TRD-0079</td><td><span class="badge badge-green">Low</span></td><td>Minor price deviation</td><td><span class="badge badge-green">Closed</span></td><td><button class="btn btn-sm btn-outline">View</button></td></tr>
+                  <tr><td class="mono">CRV-0015</td><td class="mono">TRD-0071</td><td><span class="badge badge-green">Low</span></td><td>Earnings window trade</td><td><span class="badge badge-green">Closed</span></td><td><button class="btn btn-sm btn-outline">View</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Quick Policy Issue</div></div>
+            <div class="card-body">
+              <div class="form-group"><label class="form-label">Policy Reference</label><input type="text" class="form-control" placeholder="e.g. SEC-2026-17a" /></div>
+              <div class="form-group"><label class="form-label">Policy Title</label><input type="text" class="form-control" placeholder="Short descriptive title…" /></div>
+              <div class="form-group"><label class="form-label">Policy Details</label><textarea class="form-control" rows="3" placeholder="Describe the regulatory requirement…"></textarea></div>
+              <div class="form-row">
+                <div class="form-group"><label class="form-label">Effective Date</label><input type="date" class="form-control" /></div>
+                <div class="form-group"><label class="form-label">Recipients</label><select class="form-control"><option>Auditor Only</option><option>Auditor + Fraud Analyst</option><option>All Roles</option></select></div>
+              </div>
+              <button class="btn btn-primary" style="width:100%;" onclick="showToast('📤 Policy update issued to Auditor','blue')">Issue Policy Update</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ Compliance Reviews ══ -->
+      <div class="view" id="view-reviews">
+        <div class="page-header">
+          <div class="page-header-left">
+            <h2>Compliance Reviews</h2>
+            <p>All compliance cases forwarded by the Auditor — review and take action</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Review ID</th><th>Trade ID</th><th>Symbol</th><th>Risk</th><th>Concern</th><th>Forwarded</th><th>Decision</th><th>Status</th><th>Action</th></tr></thead>
+              <tbody>
+                <tr><td class="mono">CRV-0018</td><td class="mono">TRD-0088</td><td>NVDA</td><td><span class="badge badge-red">High</span></td><td>Volume anomaly ×10x</td><td class="mono">2026-03-28</td><td>—</td><td><span class="badge badge-amber">Open</span></td><td><button class="btn btn-sm btn-outline" onclick="openModal('modal-compliance-action')">Review</button></td></tr>
+                <tr><td class="mono">CRV-0017</td><td class="mono">TRD-0083</td><td>TSLA</td><td><span class="badge badge-amber">Medium</span></td><td>Repeat sell within 2hrs</td><td class="mono">2026-03-27</td><td>Fraud escalated</td><td><span class="badge badge-amber">Open</span></td><td><button class="btn btn-sm btn-outline" onclick="openModal('modal-compliance-action')">Review</button></td></tr>
+                <tr><td class="mono">CRV-0016</td><td class="mono">TRD-0079</td><td>META</td><td><span class="badge badge-green">Low</span></td><td>Minor price deviation</td><td class="mono">2026-03-20</td><td>Policy reminder</td><td><span class="badge badge-green">Closed</span></td><td><button class="btn btn-sm btn-outline">View</button></td></tr>
+                <tr><td class="mono">CRV-0015</td><td class="mono">TRD-0071</td><td>AAPL</td><td><span class="badge badge-green">Low</span></td><td>Earnings window</td><td class="mono">2026-03-10</td><td>Cleared</td><td><span class="badge badge-green">Closed</span></td><td><button class="btn btn-sm btn-outline">View</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ Audit Findings ══ -->
+      <div class="view" id="view-findings">
+        <div class="page-header">
+          <div class="page-header-left">
+            <h2>Audit Findings &amp; Compliance Status</h2>
+            <p>Findings forwarded by Auditor — review and take regulatory action</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Finding ID</th><th>Reference</th><th>Finding</th><th>Severity</th><th>Forwarded</th><th>Action Taken</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td class="mono">FND-055</td><td>TRD-0088</td><td>Abnormal volume spike — NVDA</td><td><span class="badge badge-red">High</span></td><td>2026-03-28</td><td>Escalated to Fraud</td><td><span class="badge badge-amber">Open</span></td></tr>
+                <tr><td class="mono">FND-054</td><td>TRD-0083</td><td>Repeated TSLA sell within 2hrs</td><td><span class="badge badge-amber">Medium</span></td><td>2026-03-27</td><td>Fraud investigation</td><td><span class="badge badge-green">Resolved</span></td></tr>
+                <tr><td class="mono">FND-052</td><td>RPT-2026-010</td><td>Missing stock movement entries</td><td><span class="badge badge-amber">Medium</span></td><td>2026-03-15</td><td>Correction issued</td><td><span class="badge badge-green">Resolved</span></td></tr>
+                <tr><td class="mono">FND-048</td><td>TRD-0071</td><td>Earnings window trade flag</td><td><span class="badge badge-green">Low</span></td><td>2026-03-10</td><td>Policy reminder sent</td><td><span class="badge badge-green">Resolved</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ Issue Policy ══ -->
+      <div class="view" id="view-policies">
+        <div class="page-header">
+          <div class="page-header-left">
+            <h2>Issue Regulatory Policy Update</h2>
+            <p>Publish new regulatory requirements to Auditor and other stakeholders</p>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-header"><div class="card-title">New Policy Form</div></div>
+            <div class="card-body">
+              <div class="form-group"><label class="form-label">Policy Reference No.</label><input class="form-control" placeholder="e.g. SEC-2026-17a, AML-2026-03" /></div>
+              <div class="form-group"><label class="form-label">Policy Title</label><input class="form-control" placeholder="Short descriptive title…" /></div>
+              <div class="form-group"><label class="form-label">Policy Details</label><textarea class="form-control" rows="5" placeholder="Full regulatory text or summary of the requirement…"></textarea></div>
+              <div class="form-row">
+                <div class="form-group"><label class="form-label">Effective Date</label><input type="date" class="form-control" /></div>
+                <div class="form-group"><label class="form-label">Category</label><select class="form-control"><option>AML</option><option>Insider Trading</option><option>Risk Threshold</option><option>Reporting</option><option>Other</option></select></div>
+              </div>
+              <div class="form-group"><label class="form-label">Recipients</label><select class="form-control"><option>Auditor Only</option><option>Auditor + Fraud Analyst</option><option>All Roles</option></select></div>
+              <button class="btn btn-primary" style="width:100%;" onclick="showToast('📋 Policy update issued successfully','blue')">Issue Policy Update</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Recent Issued Policies</div></div>
+            <div class="card-body">
+              <div class="timeline">
+                <div class="tl-item"><div class="tl-dot blue">📋</div><div><div class="tl-meta">2026-03-28 · SEC-2026-17a</div><div class="tl-text">Buy transactions &gt;$100K require <b>dual approval</b> from 2026-04-01</div></div></div>
+                <div class="tl-item"><div class="tl-dot blue">📋</div><div><div class="tl-meta">2026-03-20 · AML-2026-03</div><div class="tl-text">Flag all same-day multi-trades <b>exceeding $250K</b></div></div></div>
+                <div class="tl-item"><div class="tl-dot blue">📋</div><div><div class="tl-meta">2026-03-10 · INS-2026-01</div><div class="tl-text">30-day <b>trade window restriction</b> for executives</div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ Policy History ══ -->
+      <div class="view" id="view-policy-history">
+        <div class="page-header">
+          <div class="page-header-left">
+            <h2>Policy History</h2>
+            <p>All regulatory policies issued to Auditor and Fraud Analyst</p>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('modal-policy-update')">＋ Issue New Policy</button>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Policy Ref</th><th>Title</th><th>Category</th><th>Issued</th><th>Effective</th><th>Recipients</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td class="mono">SEC-2026-17a</td><td>Dual approval for large buy transactions</td><td>Reporting</td><td>2026-03-28</td><td>2026-04-01</td><td>Auditor + FA</td><td><span class="badge badge-blue">Upcoming</span></td></tr>
+                <tr><td class="mono">AML-2026-03</td><td>Same-day multi-trade AML threshold</td><td>AML</td><td>2026-03-20</td><td>2026-03-20</td><td>Auditor</td><td><span class="badge badge-green">Active</span></td></tr>
+                <tr><td class="mono">INS-2026-01</td><td>Executive 30-day trade window restriction</td><td>Insider Trading</td><td>2026-03-10</td><td>2026-03-10</td><td>All Roles</td><td><span class="badge badge-green">Active</span></td></tr>
+                <tr><td class="mono">RSK-2025-12</td><td>Risk score recalibration — Q4 2025</td><td>Risk Threshold</td><td>2025-12-01</td><td>2026-01-01</td><td>Auditor</td><td><span class="badge badge-gray">Archived</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Modals -->
+<div class="modal-overlay" id="modal-policy-update">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Issue Regulatory Policy Update</div><button class="modal-close" onclick="closeModal('modal-policy-update')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Policy Reference No.</label><input class="form-control" placeholder="e.g. SEC-2026-17a" /></div>
+      <div class="form-group"><label class="form-label">Policy Title</label><input class="form-control" placeholder="Short descriptive title…" /></div>
+      <div class="form-group"><label class="form-label">Policy Details</label><textarea class="form-control" rows="4" placeholder="Full regulatory text or summary…"></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Effective Date</label><input type="date" class="form-control" /></div>
+        <div class="form-group"><label class="form-label">Recipients</label><select class="form-control"><option>Auditor Only</option><option>Auditor + Fraud Analyst</option><option>All Roles</option></select></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-policy-update')">Cancel</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-policy-update');showToast('📋 Policy issued successfully','blue')">Issue Policy</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-compliance-action">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Review Compliance Case CRV-0018</div><button class="modal-close" onclick="closeModal('modal-compliance-action')">✕</button></div>
+    <div class="modal-body">
+      <div class="info-row"><span class="label">Trade Reference</span><span class="value">TRD-0088 – NVDA</span></div>
+      <div class="info-row"><span class="label">Risk Level</span><span class="value"><span class="badge badge-red">High</span></span></div>
+      <div class="info-row"><span class="label">Issue</span><span class="value">Volume anomaly — ×10x normal buy</span></div>
+      <div class="info-row"><span class="label">Forwarded By</span><span class="value">Auditor</span></div>
+      <div class="info-row"><span class="label">Date</span><span class="value">2026-03-28</span></div>
+      <hr class="divider" />
+      <div class="form-group"><label class="form-label">Compliance Decision</label>
+        <select class="form-control"><option>Escalate to Fraud Analyst</option><option>Issue Policy Reminder</option><option>Clear – No Violation</option><option>Suspend Trading Privileges</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Action Notes</label><textarea class="form-control" rows="3" placeholder="Describe your compliance decision and rationale…"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-compliance-action')">Cancel</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-compliance-action');showToast('⚖️ Compliance action recorded','blue')">Record Decision</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+const TICKER_DATA=[{s:'AAPL',p:'$194.62',c:'+1.24%',up:true},{s:'MSFT',p:'$418.33',c:'+0.87%',up:true},{s:'GOOGL',p:'$171.20',c:'-0.43%',up:false},{s:'AMZN',p:'$209.80',c:'+2.11%',up:true},{s:'TSLA',p:'$163.57',c:'-3.28%',up:false},{s:'META',p:'$511.40',c:'+1.55%',up:true},{s:'NVDA',p:'$875.20',c:'+4.02%',up:true},{s:'JPMC',p:'$198.45',c:'-0.15%',up:false}];
+function buildTicker(){const el=document.getElementById('ticker');el.innerHTML=[...TICKER_DATA,...TICKER_DATA].map(t=>`<div class="ticker-item"><span class="ticker-symbol">${t.s}</span><span class="ticker-price">${t.p}</span><span class="ticker-change" style="color:var(${t.up?'--green':'--red'})">${t.up?'▲':'▼'} ${t.c}</span></div><span class="ticker-divider"></span>`).join('');}
+buildTicker();
+document.getElementById('topbar-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
+const VIEWS=['dashboard','reviews','findings','policies','policy-history'];
+const TITLES={dashboard:'Dashboard',reviews:'Compliance Reviews',findings:'Audit Findings',policies:'Issue Policy Update','policy-history':'Policy History'};
+function showView(id){VIEWS.forEach(v=>document.getElementById('view-'+v).classList.toggle('active',v===id));document.getElementById('topbar-title').textContent=TITLES[id]||'Dashboard';}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+const TC={green:'var(--green)',red:'var(--red)',amber:'var(--amber)',blue:'var(--blue)',gold:'var(--gold)'};
+function showToast(msg,color='green'){const c=document.getElementById('toast-container'),t=document.createElement('div');t.className='toast';t.style.borderLeftColor=TC[color]||TC.green;t.innerHTML=`<span>${msg}</span>`;c.appendChild(t);setTimeout(()=>t.remove(),4200);}
+</script>
+</body>
+</html>
