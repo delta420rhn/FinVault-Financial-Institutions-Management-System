@@ -25,9 +25,7 @@ Purpose
 
 This system demonstrates a structured, role-based approach to managing stock trading operations with transparency, accountability, and security.
 
-Here’s a clean **README section with just the team members listed**:
-
-
+Team:
 
 * Shahnaz Raihan Summy (2210411) – [2210411@iub.edu.bd](mailto:2210411@iub.edu.bd)
 * Shahriar Islam (2021194) – [2021194@iub.edu.bd](mailto:2021194@iub.edu.bd)
