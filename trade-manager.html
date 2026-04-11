@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FinVault – Trade Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-name">Fin<span>Vault</span></div>
+      <div class="brand-sub">STOCK MANAGEMENT SYSTEM</div>
+    </div>
+    <div class="sidebar-role-pill">TRADE MANAGER</div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Overview</div>
+      <div class="nav-item active" onclick="showView('dashboard')"><span class="nav-icon">🏠</span> Dashboard</div>
+      <div class="nav-section-label">Trading</div>
+      <div class="nav-item" onclick="showView('orders')"><span class="nav-icon">📈</span> Trade Orders</div>
+      <div class="nav-item" onclick="showView('buy-request')"><span class="nav-icon">🛒</span> Submit Purchase Request</div>
+      <div class="nav-section-label">Alerts</div>
+      <div class="nav-item" onclick="showView('clarifications')"><span class="nav-icon">⚑</span> Fraud Clarifications <span class="nav-badge">2</span></div>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="sidebar-logout" onclick="window.location.href='index.html'">⬅ Switch Role</button>
+    </div>
+  </aside>
+
+  <div class="main-wrap">
+    <div class="ticker-wrap"><div class="ticker-inner" id="ticker"></div></div>
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-date" id="topbar-date"></div>
+      <div class="topbar-avatar">TM</div>
+    </div>
+
+    <div class="page-content">
+
+      <!-- ══ Dashboard ══ -->
+      <div class="view active" id="view-dashboard">
+        <div class="page-header">
+          <div class="page-header-left">
+            <h2>Trade Manager Dashboard</h2>
+            <p>Execute trades, submit records for review, and track transaction status</p>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('modal-new-trade')">＋ New Trade Order</button>
+        </div>
+        <div class="stats-row">
+          <div class="stat-card" style="--accent:rgba(46,196,122,.2)"><div class="stat-label">Trades Today</div><div class="stat-value">24</div><div class="stat-change up">▲ 6 more than yesterday</div></div>
+          <div class="stat-card" style="--accent:rgba(75,142,240,.2)"><div class="stat-label">Buy Orders</div><div class="stat-value">15</div><div class="stat-change neutral">↔ $1.2M total value</div></div>
+          <div class="stat-card" style="--accent:rgba(224,85,85,.2)"><div class="stat-label">Sell Orders</div><div class="stat-value">9</div><div class="stat-change neutral">↔ $842K total value</div></div>
+          <div class="stat-card" style="--accent:rgba(240,168,48,.2)"><div class="stat-label">Flagged by Fraud Analyst</div><div class="stat-value">2</div><div class="stat-change down">▼ Requires clarification</div></div>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Available Stock from Stock Manager</div><span class="badge badge-green">Live</span></div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead><tr><th>Symbol</th><th>Available</th><th>Price</th><th>Status</th><th>Action</th></tr></thead>
+                <tbody id="stock-body"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Fraud Analyst Clarification Requests</div><span class="badge badge-red">2 New</span></div>
+            <div class="card-body">
+              <div class="alert alert-red">🛡️ <span>2 trades flagged — Fraud Analyst requires clarification (CLR-008, CLR-006)</span></div>
+              <div class="timeline">
+                <div class="tl-item">
+                  <div class="tl-dot red">⚑</div>
+                  <div>
+                    <div class="tl-meta">2026-03-28 · 08:50 · TRD-0088</div>
+                    <div class="tl-text">Fraud Analyst flagged large <b>NVDA buy (×600 shares)</b> — unusual volume. Provide justification.</div>
+                    <div style="margin-top:8px;"><button class="btn btn-sm btn-outline" onclick="openModal('modal-clarification')">Respond</button></div>
+                  </div>
+                </div>
+                <div class="tl-item">
+                  <div class="tl-dot red">⚑</div>
+                  <div>
+                    <div class="tl-meta">2026-03-27 · 17:30 · TRD-0083</div>
+                    <div class="tl-text">Fraud Analyst: <b>TSLA repeated sell pattern</b> within 2 hours. Submit documentation.</div>
+                    <div style="margin-top:8px;"><button class="btn btn-sm btn-outline" onclick="openModal('modal-clarification')">Respond</button></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ Trade Orders ══ -->
+      <div class="view" id="view-orders">
+        <div class="page-header">
+          <div class="page-header-left">
+            <h2>Trade Orders</h2>
+            <p>Submit and manage buy &amp; sell orders — records auto-forwarded to Auditor</p>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('modal-new-trade')">＋ New Order</button>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">All Trade Orders</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <select class="form-control" style="width:130px;padding:6px 10px;font-size:12px;"><option>All Types</option><option>Buy</option><option>Sell</option></select>
+              <select class="form-control" style="width:130px;padding:6px 10px;font-size:12px;"><option>All Status</option><option>Executed</option><option>Pending</option><option>Flagged</option></select>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Trade ID</th><th>Symbol</th><th>Type</th><th>Qty</th><th>Price</th><th>Total</th><th>Date / Time</th><th>Auditor Review</th><th>Status</th></tr></thead>
+              <tbody id="trade-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ Buy Request ══ -->
+      <div class="view" id="view-buy-request">
+        <div class="page-header">
+          <div class="page-header-left">
+            <h2>Submit Purchase Request</h2>
+            <p>Request stock purchase — sent to Stock Manager for availability confirmation</p>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-header"><div class="card-title">New Purchase Request</div></div>
+            <div class="card-body">
+              <div class="form-group">
+                <label class="form-label">Stock Symbol</label>
+                <!-- FIX: values are plain symbols now, no "AAPL – Apple Inc." parsing needed -->
+                <select id="buy-symbol" class="form-control">
+                  <option value="">-- Select Symbol --</option>
+                  <option value="AAPL">AAPL – Apple Inc.</option>
+                  <option value="MSFT">MSFT – Microsoft Corp.</option>
+                  <option value="TSLA">TSLA – Tesla Inc.</option>
+                  <option value="NVDA">NVDA – NVIDIA Corp.</option>
+                  <option value="AMZN">AMZN – Amazon.com Inc.</option>
+                  <option value="META">META – Meta Platforms</option>
+                  <option value="JPMC">JPMC – JPMorgan Chase</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <div class="form-group"><label class="form-label">Quantity</label><input id="buy-qty" type="number" class="form-control" placeholder="e.g. 200" /></div>
+                <div class="form-group"><label class="form-label">Target Price ($)</label><input id="buy-price" type="number" class="form-control" placeholder="e.g. 194.00" /></div>
+              </div>
+              <div class="form-group"><label class="form-label">Trade Justification</label><textarea id="buy-note" class="form-control" rows="3" placeholder="Reason for this purchase…"></textarea></div>
+              <div class="form-group">
+                <label class="form-label">Priority</label>
+                <!-- FIX: wired up id so submitPurchase() can read it -->
+                <select id="buy-priority" class="form-control">
+                  <option value="Standard">Standard</option>
+                  <option value="High">High</option>
+                  <option value="Urgent">Urgent</option>
+                </select>
+              </div>
+              <button class="btn btn-primary" style="width:100%;" onclick="submitPurchase()">Submit Purchase Request</button>
+            </div>
+          </div>
+          <div>
+            <div class="card">
+              <div class="card-header"><div class="card-title">Purchase Request Status</div></div>
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead><tr><th>Req ID</th><th>Symbol</th><th>Qty</th><th>SM Response</th></tr></thead>
+                  <!-- FIX: now loaded dynamically from DB -->
+                  <tbody id="purchase-status-body">
+                    <tr><td colspan="4" style="text-align:center;color:var(--text-lo);padding:16px;">Loading…</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card" style="margin-top:16px;">
+              <div class="card-header"><div class="card-title">Submit Buy Record to Auditor</div></div>
+              <div class="card-body">
+                <div class="alert alert-amber">📋 <span>All executed buy transactions must be submitted to the Auditor for compliance review.</span></div>
+                <button class="btn btn-primary" style="width:100%;" onclick="showToast('📤 Sent to Auditor','gold')">Submit TRD-0092 to Auditor</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ Clarifications ══ -->
+      <div class="view" id="view-clarifications">
+        <div class="page-header">
+          <div class="page-header-left">
+            <h2>Fraud Analyst Clarification Requests</h2>
+            <p>Respond to flagged trade queries raised by the Fraud Analyst</p>
+          </div>
+        </div>
+        <div class="alert alert-red">🛡️ <span>2 active clarification requests are awaiting your response. Delayed responses may result in trade suspension.</span></div>
+        <div class="card">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Req ID</th><th>Trade ID</th><th>Symbol</th><th>Concern</th><th>Deadline</th><th>Status</th><th>Action</th></tr></thead>
+              <tbody id="clarification-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /page-content -->
+  </div><!-- /main-wrap -->
+</div><!-- /app -->
+
+<!-- Modals -->
+<div class="modal-overlay" id="modal-new-trade">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">New Trade Order</div><button class="modal-close" onclick="closeModal('modal-new-trade')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Order Type</label>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-success" style="flex:1;" id="btn-buy"  onclick="setTradeType('BUY')">▲ BUY</button>
+          <button class="btn btn-outline" style="flex:1;" id="btn-sell" onclick="setTradeType('SELL')">▼ SELL</button>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Symbol</label>
+          <select id="trade-symbol" class="form-control">
+            <option value="AAPL">AAPL</option>
+            <option value="MSFT">MSFT</option>
+            <option value="TSLA">TSLA</option>
+            <option value="NVDA">NVDA</option>
+            <option value="AMZN">AMZN</option>
+            <option value="META">META</option>
+            <option value="JPMC">JPMC</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Quantity</label><input id="trade-qty" type="number" class="form-control" placeholder="e.g. 100" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Price Per Share ($)</label><input id="trade-price" type="number" class="form-control" placeholder="Market price…" /></div>
+        <div class="form-group"><label class="form-label">Order Mode</label>
+          <select class="form-control"><option>Market Order</option><option>Limit Order</option><option>Stop Loss</option></select>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">Trade Justification</label><textarea id="trade-justification" class="form-control" rows="2" placeholder="Brief reason for this trade…"></textarea></div>
+      <div class="alert alert-blue">📋 <span>All executed trades are auto-submitted to the Auditor for compliance review.</span></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-new-trade')">Cancel</button>
+      <button class="btn btn-primary" onclick="executeTrade()">Execute Trade</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-clarification">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Respond to Fraud Analyst Clarification</div><button class="modal-close" onclick="closeModal('modal-clarification')">✕</button></div>
+    <div class="modal-body">
+      <div class="alert alert-red">🛡️ <span>CLR-008 — TRD-0088 NVDA ×600 shares — Volume anomaly ×10x normal</span></div>
+      <div class="form-group"><label class="form-label">Your Response / Justification</label><textarea id="clarification-text" class="form-control" rows="5" placeholder="Provide a detailed explanation for this trade…"></textarea></div>
+      <div class="form-group"><label class="form-label">Supporting Documents</label><input type="file" class="form-control" style="padding:8px;" /></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-clarification')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitClarification()">Submit Response</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+/* ─── Ticker ─────────────────────────────────────── */
+const TICKER_DATA=[{s:'AAPL',p:'$194.62',c:'+1.24%',up:true},{s:'MSFT',p:'$418.33',c:'+0.87%',up:true},{s:'GOOGL',p:'$171.20',c:'-0.43%',up:false},{s:'AMZN',p:'$209.80',c:'+2.11%',up:true},{s:'TSLA',p:'$163.57',c:'-3.28%',up:false},{s:'META',p:'$511.40',c:'+1.55%',up:true},{s:'NVDA',p:'$875.20',c:'+4.02%',up:true},{s:'JPMC',p:'$198.45',c:'-0.15%',up:false}];
+(function buildTicker(){
+  const el=document.getElementById('ticker');
+  el.innerHTML=[...TICKER_DATA,...TICKER_DATA].map(t=>`<div class="ticker-item"><span class="ticker-symbol">${t.s}</span><span class="ticker-price">${t.p}</span><span class="ticker-change" style="color:var(${t.up?'--green':'--red'})">${t.up?'▲':'▼'} ${t.c}</span></div><span class="ticker-divider"></span>`).join('');
+})();
+
+document.getElementById('topbar-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
+
+/* ─── Views ──────────────────────────────────────── */
+const VIEWS=['dashboard','orders','buy-request','clarifications'];
+const TITLES={dashboard:'Dashboard',orders:'Trade Orders','buy-request':'Purchase Request',clarifications:'Fraud Clarifications'};
+function showView(id){
+  VIEWS.forEach(v=>document.getElementById('view-'+v).classList.toggle('active',v===id));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    if(n.getAttribute('onclick')&&n.getAttribute('onclick').includes(id)) n.classList.add('active');
+  });
+  document.getElementById('topbar-title').textContent=TITLES[id]||'Dashboard';
+  if(id==='buy-request') loadPurchaseStatus();
+}
+
+/* ─── Modals ─────────────────────────────────────── */
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+
+/* ─── Toast ──────────────────────────────────────── */
+const TC={green:'var(--green)',red:'var(--red)',amber:'var(--amber)',blue:'var(--blue)',gold:'var(--gold)'};
+function showToast(msg,color='green'){
+  const c=document.getElementById('toast-container');
+  const t=document.createElement('div');t.className='toast';
+  t.style.borderLeftColor=TC[color]||TC.green;
+  t.innerHTML=`<span>${msg}</span>`;
+  c.appendChild(t);setTimeout(()=>t.remove(),4200);
+}
+
+/* ─── Utility ────────────────────────────────────── */
+function escHtml(str){
+  if(str===null||str===undefined)return'';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+const API='api/';
+let TRADE_TYPE='BUY';
+
+/* ─── Load Stocks ────────────────────────────────── */
+async function loadStocks(){
+  try {
+    const res=await fetch(API+'get_available_stocks_tm.php');
+    const data=await res.json();
+    const tbody=document.getElementById('stock-body');
+    if(!data.length){
+      tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--text-lo);padding:16px;">No stocks available</td></tr>';
+      return;
+    }
+    tbody.innerHTML=data.map(s=>{
+      const status=s.quantity>500?'badge-green':s.quantity>0?'badge-amber':'badge-red';
+      return`<tr>
+        <td>${escHtml(s.symbol)}</td>
+        <td>${Number(s.quantity).toLocaleString()}</td>
+        <td>$${parseFloat(s.price).toFixed(2)}</td>
+        <td><span class="badge ${status}">${s.quantity>0?'Available':'Out of Stock'}</span></td>
+        <td>${s.quantity>0
+          ?`<button class="btn btn-sm btn-primary" onclick="openModal('modal-new-trade')">Buy</button>`
+          :`<button class="btn btn-sm btn-outline" disabled>Unavailable</button>`
+        }</td>
+      </tr>`;
+    }).join('');
+  } catch(e){ console.error('loadStocks:',e); }
+}
+
+/* ─── Load Trades ────────────────────────────────── */
+async function loadTrades(){
+  try {
+    const res=await fetch(API+'get_trades.php');
+    const data=await res.json();
+    const tbody=document.getElementById('trade-body');
+    if(!data.length){
+      tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text-lo);padding:16px;">No trades found</td></tr>';
+      return;
+    }
+    tbody.innerHTML=data.map(t=>`<tr>
+      <td class="mono">${escHtml(t.trade_ref)}</td>
+      <td>${escHtml(t.symbol)}</td>
+      <td><span class="badge ${t.trade_type==='BUY'?'badge-green':'badge-red'}">${escHtml(t.trade_type)}</span></td>
+      <td>${escHtml(String(t.quantity))}</td>
+      <td>$${parseFloat(t.price_per_share).toFixed(2)}</td>
+      <td>$${Number(t.total_value).toLocaleString(undefined,{maximumFractionDigits:0})}</td>
+      <td class="mono">${escHtml(t.executed_at)}</td>
+      <td><span class="badge badge-amber">${escHtml(t.auditor_status)}</span></td>
+      <td><span class="badge badge-blue">${escHtml(t.trade_status)}</span></td>
+    </tr>`).join('');
+  } catch(e){ console.error('loadTrades:',e); }
+}
+
+/* ─── Load Clarifications ────────────────────────── */
+async function loadClarifications(){
+  try {
+    const res=await fetch(API+'get_clarifications.php');
+    const data=await res.json();
+    const tbody=document.getElementById('clarification-body');
+    if(!data.length){
+      tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text-lo);padding:16px;">No clarification requests</td></tr>';
+      return;
+    }
+    tbody.innerHTML=data.map(c=>`<tr>
+      <td>${escHtml(c.clarif_ref)}</td>
+      <td>${escHtml(c.trade_ref)}</td>
+      <td>${escHtml(c.symbol)}</td>
+      <td>${escHtml(c.pattern)}</td>
+      <td>${escHtml(c.deadline)}</td>
+      <td><span class="badge badge-amber">${escHtml(c.status)}</span></td>
+      <td><button class="btn btn-sm btn-outline" onclick="openModal('modal-clarification')">Respond</button></td>
+    </tr>`).join('');
+  } catch(e){ console.error('loadClarifications:',e); }
+}
+
+/* ─── Load Purchase Request Status (TM's own requests) ── */
+async function loadPurchaseStatus(){
+  try {
+    const res=await fetch(API+'get_purchase_requests.php');
+    const data=await res.json();
+    const tbody=document.getElementById('purchase-status-body');
+    // Handle error object returned by fixed PHP
+    const rows=Array.isArray(data)?data:(data.data||[]);
+    if(!rows.length){
+      tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--text-lo);padding:16px;">No requests yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML=rows.map(r=>{
+      const sc=r.status==='Confirmed'?'badge-green':r.status==='Pending'?'badge-amber':'badge-red';
+      return`<tr>
+        <td class="mono">${escHtml(String(r.request_id))}</td>
+        <td>${escHtml(r.symbol)}</td>
+        <td>${escHtml(String(r.quantity))}</td>
+        <td><span class="badge ${sc}">${escHtml(r.status)}</span></td>
+      </tr>`;
+    }).join('');
+  } catch(e){ console.error('loadPurchaseStatus:',e); }
+}
+
+/* ─── Submit Purchase Request ────────────────────── */
+async function submitPurchase(){
+  // FIX: option values are now plain symbols — no .split() needed
+  const symbol   = document.getElementById('buy-symbol').value;
+  const qty      = document.getElementById('buy-qty').value;
+  const price    = document.getElementById('buy-price').value;
+  const note     = document.getElementById('buy-note').value;
+  const priority = document.getElementById('buy-priority').value;
+
+  if(!symbol || !qty || !price){
+    showToast('⚠️ Please fill all required fields','amber');
+    return;
+  }
+
+  try {
+    const res=await fetch(API+'create_purchase_request.php',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ symbol, qty, price, note, priority })
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    if(data.success){
+      showToast('📨 Purchase request sent to Stock Manager','blue');
+      document.getElementById('buy-qty').value='';
+      document.getElementById('buy-price').value='';
+      document.getElementById('buy-note').value='';
+      document.getElementById('buy-symbol').value='';
+      loadPurchaseStatus(); // refresh status table
+    } else {
+      showToast('❌ '+(data.error||'Request failed'),'red');
+    }
+  } catch(err){
+    console.error(err);
+    showToast('❌ Network / Server error','red');
+  }
+}
+
+/* ─── Execute Trade ──────────────────────────────── */
+// FIX: was calling create_purchase_request.php — must call create_trade.php
+async function executeTrade(){
+  const symbol = document.getElementById('trade-symbol').value;
+  const qty    = document.getElementById('trade-qty').value;
+  const price  = document.getElementById('trade-price').value;
+  const note   = document.getElementById('trade-justification').value;
+
+  if(!symbol||!qty||!price){
+    showToast('⚠️ Please fill Symbol, Quantity and Price','amber');
+    return;
+  }
+
+  try {
+    const res=await fetch(API+'create_trade.php',{   // ← FIXED endpoint
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ symbol, qty:parseInt(qty), price:parseFloat(price), type:TRADE_TYPE, note })
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    if(data.success){
+      showToast('✅ Trade executed','green');
+      closeModal('modal-new-trade');
+      document.getElementById('trade-qty').value='';
+      document.getElementById('trade-price').value='';
+      document.getElementById('trade-justification').value='';
+      loadTrades();
+      loadStocks(); // refresh available qty
+    } else {
+      showToast('❌ Failed: '+(data.error||'Unknown error'),'red');
+    }
+  } catch(err){
+    console.error(err);
+    showToast('❌ Network / Server error','red');
+  }
+}
+
+/* ─── Clarification ──────────────────────────────── */
+async function submitClarification(){
+  const text=document.getElementById('clarification-text').value.trim();
+  if(!text){ showToast('⚠️ Please enter a response','amber'); return; }
+  try {
+    await fetch(API+'submit_clarification_response.php',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text})
+    });
+  } catch(e){}
+  closeModal('modal-clarification');
+  showToast('📨 Response sent to Fraud Analyst','blue');
+}
+
+/* ─── Trade type toggle ──────────────────────────── */
+function setTradeType(t){
+  TRADE_TYPE=t;
+  document.getElementById('btn-buy').className =t==='BUY' ?'btn btn-success':'btn btn-outline';
+  document.getElementById('btn-buy').style.flex='1';
+  document.getElementById('btn-sell').className=t==='SELL'?'btn btn-danger' :'btn btn-outline';
+  document.getElementById('btn-sell').style.flex='1';
+}
+
+/* ─── Init ───────────────────────────────────────── */
+loadStocks();
+loadTrades();
+loadClarifications();
+</script>
+</body>
+</html>

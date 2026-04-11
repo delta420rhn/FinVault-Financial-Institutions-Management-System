@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FinVault – Stock Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+<style>
+  /* ── Screen-fit: sidebar fixed, rest scrolls inside main ── */
+  html, body { height: 100%; overflow: hidden; }
+
+  .app {
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+  }
+
+  .sidebar {
+    /* already position:fixed in style.css — nothing to change */
+  }
+
+  .main-wrap {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* The scrollable area is ONLY page-content */
+  .page-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 28px;
+  }
+
+  /* Ticker stays at its natural height */
+  .ticker-wrap { flex-shrink: 0; }
+  .topbar      { flex-shrink: 0; }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ── Sidebar ───────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-name">Fin<span>Vault</span></div>
+      <div class="brand-sub">STOCK MANAGEMENT SYSTEM</div>
+    </div>
+    <div class="sidebar-role-pill">STOCK MANAGER</div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Overview</div>
+      <div class="nav-item active" onclick="showView('dashboard')">
+        <span class="nav-icon">🏠</span> Dashboard
+      </div>
+      <div class="nav-section-label">Inventory</div>
+      <div class="nav-item" onclick="showView('inventory')">
+        <span class="nav-icon">📦</span> Stock Inventory
+      </div>
+      <div class="nav-item" id="nav-requests" onclick="showView('requests')">
+        <span class="nav-icon">📋</span> Purchase Requests
+        <span class="nav-badge" id="pending-badge">…</span>
+      </div>
+      <div class="nav-section-label">Reporting</div>
+      <div class="nav-item" onclick="showView('reports')">
+        <span class="nav-icon">📊</span> Valuation Reports
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="sidebar-logout" onclick="window.location.href='index.html'">⬅ Switch Role</button>
+    </div>
+  </aside>
+
+  <!-- ── Main ──────────────────────────────────── -->
+  <div class="main-wrap">
+    <!-- Ticker -->
+    <div class="ticker-wrap"><div class="ticker-inner" id="ticker"></div></div>
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-date" id="topbar-date"></div>
+      <div class="topbar-avatar">SM</div>
+    </div>
+
+    <div class="page-content">
+
+      <!-- ══ View: Dashboard ══ -->
+      <div class="view active" id="view-dashboard">
+        <div class="page-header">
+          <div class="page-header-left">
+            <h2>Stock Manager Dashboard</h2>
+            <p>Real-time overview of inventory, valuation &amp; trade confirmations</p>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('modal-update-stock')">＋ Update Stock</button>
+        </div>
+
+        <!-- Stat cards – values loaded from DB -->
+        <div class="stats-row">
+          <div class="stat-card" style="--accent:rgba(75,142,240,.2)">
+            <div class="stat-label">Total Stocks Listed</div>
+            <div class="stat-value" id="stat-total">—</div>
+            <div class="stat-change neutral">Unique symbols</div>
+          </div>
+          <div class="stat-card" style="--accent:rgba(46,196,122,.2)">
+            <div class="stat-label">Approved Updates</div>
+            <div class="stat-value" id="stat-approved">—</div>
+            <div class="stat-change neutral">↔ Auditor approved</div>
+          </div>
+          <div class="stat-card" style="--accent:rgba(201,168,76,.2)">
+            <div class="stat-label">Portfolio Value</div>
+            <div class="stat-value" id="stat-portfolio">—</div>
+            <div class="stat-change up">Total market value</div>
+          </div>
+          <div class="stat-card" style="--accent:rgba(240,168,48,.2)">
+            <div class="stat-label">Pending Confirmations</div>
+            <div class="stat-value" id="stat-pending">—</div>
+            <div class="stat-change down">▼ Needs action</div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Stock Inventory Overview</div>
+              <button class="btn btn-sm btn-outline" onclick="showView('inventory')">View All</button>
+            </div>
+            <div class="card-body">
+              <div class="chart-container" id="sm-bar-chart"></div>
+              <div style="display:flex;gap:16px;margin-top:10px;font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--text-lo);">
+                <span style="color:var(--gold)">■</span> Available &nbsp;
+                <span style="color:var(--green)">■</span> Bought &nbsp;
+                <span style="color:var(--red)">■</span> Sold
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Recent Audit Instructions</div>
+              <span class="badge badge-amber" id="correction-badge">Loading…</span>
+            </div>
+            <div class="card-body">
+              <div class="timeline" id="corrections-timeline">
+                <div style="color:var(--text-lo);font-size:13px;">Loading…</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:20px;">
+          <div class="card-header">
+            <div class="card-title">Executed Trade Updates from Trade Manager</div>
+            <span class="badge badge-blue">Live Feed</span>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Trade ID</th><th>Symbol</th><th>Type</th><th>Qty</th><th>Price</th><th>Total</th><th>Time</th><th>Status</th></tr></thead>
+              <tbody id="trades-tbody">
+                <tr><td colspan="8" style="text-align:center;color:var(--text-lo);padding:20px;">Loading trades…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div><!-- /dashboard -->
+
+      <!-- ══ View: Inventory ══ -->
+      <div class="view" id="view-inventory">
+        <div class="page-header">
+          <div class="page-header-left">
+            <h2>Stock Inventory</h2>
+            <p>Manage all listed stocks — quantities, pricing, and availability status</p>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn btn-outline btn-sm" onclick="openModal('modal-submit-valuation')">📊 Submit Valuation Report</button>
+            <button class="btn btn-primary" onclick="openModal('modal-update-stock')">＋ Update Stock</button>
+          </div>
+        </div>
+        <div class="alert alert-blue">ℹ️ <span>Stock quantity updates require Auditor approval before they are reflected in the live inventory.</span></div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">All Stocks</div>
+            <input class="form-control" id="inv-search" style="width:220px;padding:7px 12px;font-size:13px;" placeholder="🔍 Search symbol…" oninput="filterInventory()" />
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <!-- FIX #6: Removed "Action/Confirm" column — confirm button without a request_id would always fail with "No request selected" -->
+              <thead><tr><th>Symbol</th><th>Company</th><th>Shares Available</th><th>Price/Share</th><th>Market Value</th><th>Sector</th><th>Status</th><th>Action</th></tr></thead>
+              <tbody id="inventory-tbody">
+                <tr><td colspan="8" style="text-align:center;color:var(--text-lo);padding:20px;">Loading inventory…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div><!-- /inventory -->
+
+      <!-- ══ View: Reports ══ -->
+      <div class="view" id="view-reports">
+        <div class="page-header">
+          <div class="page-header-left">
+            <h2>Valuation &amp; Movement Reports</h2>
+            <p>Submit stock valuation and movement reports to the Auditor</p>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('modal-submit-valuation')">📤 Submit New Report</button>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Submitted Reports</div></div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead><tr><th>Report ID</th><th>Type</th><th>Period</th><th>Submitted</th><th>Auditor Status</th></tr></thead>
+                <tbody>
+                  <tr><td class="mono">RPT-2026-045</td><td>Valuation</td><td>Q1 2026</td><td>2026-03-28</td><td><span class="badge badge-amber">Under Review</span></td></tr>
+                  <tr><td class="mono">RPT-2026-032</td><td>Movement</td><td>Feb 2026</td><td>2026-03-01</td><td><span class="badge badge-green">Approved</span></td></tr>
+                  <tr><td class="mono">RPT-2026-018</td><td>Valuation</td><td>Q4 2025</td><td>2026-01-15</td><td><span class="badge badge-green">Approved</span></td></tr>
+                  <tr><td class="mono">RPT-2026-010</td><td>Movement</td><td>Jan 2026</td><td>2026-02-02</td><td><span class="badge badge-red">Correction Required</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Quick Valuation Summary</div></div>
+            <div class="card-body" id="valuation-summary">
+              <div style="color:var(--text-lo);font-size:13px;">Loading…</div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /reports -->
+
+      <!-- ══ View: Purchase Requests ══ -->
+      <div class="view" id="view-requests">
+        <div class="page-header">
+          <div class="page-header-left">
+            <h2>Purchase Requests from Trade Manager</h2>
+            <p>Review and fulfill stock purchase requests submitted by Trade Manager</p>
+          </div>
+        </div>
+        <div class="alert alert-amber" id="requests-alert">
+          ⏳ <span id="requests-alert-text">Loading requests…</span>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Request ID</th><th>Symbol</th><th>Qty Requested</th><th>Req. Price</th><th>Available Qty</th><th>Market Price</th><th>Priority</th><th>Status</th><th>Action</th></tr></thead>
+              <tbody id="requests-tbody">
+                <tr><td colspan="9" style="text-align:center;color:var(--text-lo);padding:20px;">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div><!-- /requests -->
+
+    </div><!-- /page-content -->
+  </div><!-- /main-wrap -->
+</div><!-- /app -->
+
+<!-- ── Modal: Update Stock ──────────────────────── -->
+<div class="modal-overlay" id="modal-update-stock">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Update Stock Quantity</div>
+      <button class="modal-close" onclick="closeModal('modal-update-stock')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-amber">⚠ <span>Quantity updates require Auditor approval before becoming active.</span></div>
+      <div class="form-group">
+        <label class="form-label">Stock Symbol</label>
+        <select class="form-control" id="update-stock-select" onchange="updateCurrentQty(this)">
+          <option value="">-- Select Symbol --</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Current Quantity</label>
+          <input class="form-control" id="current-qty-display" value="" readonly style="opacity:.5;" placeholder="Select a stock above…" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">New Quantity</label>
+          <input type="number" class="form-control" id="new-qty-input" placeholder="Enter new qty…" min="0" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Reason for Update</label>
+        <textarea class="form-control" id="update-reason" rows="3" placeholder="Explain why this quantity needs to be updated…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-update-stock')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitStockUpdate()">Submit for Approval</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Confirm Stock (Purchase Request) ─── -->
+<div class="modal-overlay" id="modal-confirm-stock">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Confirm Stock Availability &amp; Price</div>
+      <button class="modal-close" onclick="closeModal('modal-confirm-stock')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="info-row"><span class="label">Symbol</span><span class="value" id="confirm-symbol">—</span></div>
+      <div class="info-row"><span class="label">Available Shares</span><span class="value" id="confirm-available">—</span></div>
+      <div class="info-row"><span class="label">Current Market Price</span><span class="value" id="confirm-price">—</span></div>
+      <div class="info-row"><span class="label">Requested By</span><span class="value" id="confirm-requester">—</span></div>
+      <div class="info-row"><span class="label">Requested Quantity</span><span class="value" id="confirm-qty">—</span></div>
+      <input type="hidden" id="confirm-request-id" value="" />
+      <hr class="divider" />
+      <div class="form-group">
+        <label class="form-label">Confirmation Note (optional)</label>
+        <textarea class="form-control" id="confirm-note" rows="2" placeholder="Any notes for the Trade Manager…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" onclick="handlePurchaseRequest('reject')">✕ Reject</button>
+      <button class="btn btn-success" onclick="handlePurchaseRequest('confirm')">✓ Confirm Availability</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Submit Valuation Report ─────────── -->
+<div class="modal-overlay" id="modal-submit-valuation">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Submit Valuation &amp; Movement Report</div>
+      <button class="modal-close" onclick="closeModal('modal-submit-valuation')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Report Type</label>
+          <select class="form-control">
+            <option>Valuation Report</option>
+            <option>Movement Report</option>
+            <option>Combined Report</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Reporting Period</label>
+          <input type="text" class="form-control" placeholder="e.g. Q1 2026" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Total Portfolio Value ($)</label>
+        <input type="number" class="form-control" placeholder="4217847" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Shares Bought</label>
+          <input type="number" class="form-control" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Shares Sold</label>
+          <input type="number" class="form-control" placeholder="0" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes / Remarks</label>
+        <textarea class="form-control" rows="3" placeholder="Summary of stock movements and valuation changes…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-submit-valuation')">Cancel</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-submit-valuation');showToast('📊 Valuation report submitted to Auditor','gold')">Submit to Auditor</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+/* ─── Ticker ────────────────────────────────────────── */
+const TICKER_DATA = [
+  {s:'AAPL',p:'$194.62',c:'+1.24%',up:true},{s:'MSFT',p:'$418.33',c:'+0.87%',up:true},
+  {s:'GOOGL',p:'$171.20',c:'-0.43%',up:false},{s:'AMZN',p:'$209.80',c:'+2.11%',up:true},
+  {s:'TSLA',p:'$163.57',c:'-3.28%',up:false},{s:'META',p:'$511.40',c:'+1.55%',up:true},
+  {s:'NVDA',p:'$875.20',c:'+4.02%',up:true},{s:'JPMC',p:'$198.45',c:'-0.15%',up:false},
+];
+(function buildTicker() {
+  const el = document.getElementById('ticker');
+  el.innerHTML = [...TICKER_DATA,...TICKER_DATA].map(t =>
+    `<div class="ticker-item">
+      <span class="ticker-symbol">${t.s}</span>
+      <span class="ticker-price">${t.p}</span>
+      <span class="ticker-change" style="color:var(${t.up?'--green':'--red'})">${t.up?'▲':'▼'} ${t.c}</span>
+    </div><span class="ticker-divider"></span>`
+  ).join('');
+})();
+
+document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
+
+/* ─── View switching ────────────────────────────────── */
+const ALL_VIEWS = ['dashboard','inventory','reports','requests'];
+function showView(id) {
+  ALL_VIEWS.forEach(v => document.getElementById('view-'+v).classList.toggle('active', v===id));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const titles = {dashboard:'Dashboard',inventory:'Stock Inventory',reports:'Valuation Reports',requests:'Purchase Requests'};
+  document.getElementById('topbar-title').textContent = titles[id] || '';
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick') && n.getAttribute('onclick').includes(id)) n.classList.add('active');
+  });
+  if (id === 'dashboard') { drawChart(); loadDashboard(); }
+  if (id === 'inventory')  loadInventory();
+  if (id === 'requests')   loadPurchaseRequests();
+  if (id === 'reports')    loadValuationSummary();
+}
+
+/* ─── Toast ─────────────────────────────────────────── */
+const toastColors = {green:'var(--green)',red:'var(--red)',amber:'var(--amber)',blue:'var(--blue)',gold:'var(--gold)'};
+function showToast(msg, color='green') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.style.borderLeftColor = toastColors[color] || toastColors.green;
+  t.innerHTML = `<span>${msg}</span>`;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 4200);
+}
+
+/* ─── Modals ────────────────────────────────────────── */
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o =>
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); })
+);
+
+/* ─── API base path ─────────────────────────────────── */
+const API = 'api/';
+
+/* ─── FIX #PERF: Centralized fetch helper ───────────── */
+function fetchJSON(url, options = {}) {
+  return fetch(url, options)
+    .then(r => {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .catch(err => {
+      showToast('❌ Network/API error', 'red');
+      throw err;
+    });
+}
+
+/* ─── Dashboard: load stats + corrections + trades ─── */
+function loadDashboard() {
+  // Stats
+  fetchJSON(API + 'sm_dashboard_stats.php')
+    .then(d => {
+      document.getElementById('stat-total').textContent    = d.total_stocks ?? '—';
+      document.getElementById('stat-approved').textContent = d.approved_updates ?? '—';
+      document.getElementById('stat-pending').textContent  = d.pending_confirmations ?? '—';
+      // FIX #3: Guard against null/undefined portfolio_value to prevent NaN
+      const pv = parseFloat(d.portfolio_value) || 0;
+      document.getElementById('stat-portfolio').textContent =
+        pv >= 1e6 ? '$' + (pv/1e6).toFixed(2) + 'M' : '$' + pv.toLocaleString();
+      const pb = document.getElementById('pending-badge');
+      if (pb) pb.textContent = d.pending_confirmations || '0';
+    })
+    .catch(() => {});
+
+  // Corrections timeline
+  fetchJSON(API + 'get_corrections.php')
+    .then(rows => {
+      const tl    = document.getElementById('corrections-timeline');
+      const badge = document.getElementById('correction-badge');
+      const open  = rows.filter(r => r.status === 'Open');
+      badge.textContent = open.length + ' Pending';
+      badge.className   = 'badge ' + (open.length > 0 ? 'badge-amber' : 'badge-green');
+      tl.innerHTML = rows.slice(0, 4).map(r => {
+        const isOpen   = r.status === 'Open';
+        const dotClass = isOpen ? 'amber' : 'green';
+        const icon     = isOpen ? '⚠' : '✓';
+        const dt       = r.issued_at ? r.issued_at.replace('T',' ').slice(0,16) : '';
+        return `<div class="tl-item">
+          <div class="tl-dot ${dotClass}">${icon}</div>
+          <div>
+            <div class="tl-meta">${dt} · ${escHtml(r.priority)}</div>
+            <div class="tl-text">${escHtml(r.details)}</div>
+          </div>
+        </div>`;
+      }).join('') || '<div style="color:var(--text-lo);font-size:13px;">No instructions</div>';
+    })
+    .catch(() => {});
+
+  // Recent trades
+  fetchJSON(API + 'get_recent_trades.php')
+    .then(rows => {
+      const tbody = document.getElementById('trades-tbody');
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-lo);padding:20px;">No trades found</td></tr>';
+        return;
+      }
+      tbody.innerHTML = rows.map(t => {
+        const typeClass = t.trade_type === 'BUY' ? 'badge-green' : 'badge-red';
+        const stClass   = t.trade_status === 'Executed'  ? 'badge-blue'
+                        : t.trade_status === 'Pending'   ? 'badge-amber'
+                        : t.trade_status === 'Suspended' ? 'badge-red' : 'badge-gray';
+        const time  = t.executed_at ? t.executed_at.slice(11,16) : '—';
+        const total = Number(t.total_value).toLocaleString(undefined,{maximumFractionDigits:0});
+        return `<tr>
+          <td class="mono">${escHtml(t.trade_ref)}</td>
+          <td>${escHtml(t.symbol)}</td>
+          <td><span class="badge ${typeClass}">${escHtml(t.trade_type)}</span></td>
+          <td>${escHtml(String(t.quantity))}</td>
+          <td>$${parseFloat(t.price_per_share).toFixed(2)}</td>
+          <td>$${total}</td>
+          <td class="mono">${time}</td>
+          <td><span class="badge ${stClass}">${escHtml(t.trade_status)}</span></td>
+        </tr>`;
+      }).join('');
+    })
+    .catch(() => {});
+}
+
+/* ─── Inventory ─────────────────────────────────────── */
+let inventoryData = [];
+
+function loadInventory() {
+  fetchJSON(API + 'get_stocks.php')
+    .then(stocks => {
+      if (!Array.isArray(stocks)) throw new Error('Invalid response format');
+      inventoryData = stocks;
+      renderInventory(stocks);
+      populateUpdateSelect(stocks);
+    })
+    .catch(() => {}); // centralized handler already showed toast
+}
+
+function renderInventory(stocks) {
+  const tbody = document.getElementById('inventory-tbody');
+  if (!stocks.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-lo);padding:20px;">No stocks found</td></tr>';
+    return;
+  }
+  tbody.innerHTML = stocks.map(s => {
+    const sc = s.status === 'Available' ? 'badge-green'
+             : s.status === 'Low Stock' ? 'badge-amber' : 'badge-red';
+    const mv = parseFloat(s.market_value) || (s.shares_available * s.price_per_share);
+    // FIX #6: Inventory "Confirm" button removed — it had no request_id so always failed.
+    // Restock button kept for Out of Stock; other rows show Update Stock button.
+    const btn = s.status === 'Out of Stock'
+      ? `<button class="btn btn-sm btn-outline" onclick="openUpdateForStock(${s.stock_id})">Restock</button>`
+      : `<button class="btn btn-sm btn-outline" onclick="openUpdateForStock(${s.stock_id})">Update</button>`;
+    return `<tr>
+      <td><b>${escHtml(s.symbol)}</b></td>
+      <td>${escHtml(s.company_name)}</td>
+      <td>${Number(s.shares_available).toLocaleString()}</td>
+      <td>$${parseFloat(s.price_per_share).toFixed(2)}</td>
+      <td>$${Number(mv).toLocaleString(undefined,{maximumFractionDigits:0})}</td>
+      <td>${escHtml(s.sector || '—')}</td>
+      <td><span class="badge ${sc}">${escHtml(s.status)}</span></td>
+      <td>${btn}</td>
+    </tr>`;
+  }).join('');
+}
+
+// FIX #PERF: Debounced search to prevent lag on fast typing
+let _searchTimer = null;
+function filterInventory() {
+  clearTimeout(_searchTimer);
+  _searchTimer = setTimeout(() => {
+    // FIX #4: Guard against null company_name / symbol before calling .toLowerCase()
+    const q = document.getElementById('inv-search').value.toLowerCase();
+    renderInventory(inventoryData.filter(s =>
+      (s.symbol       || '').toLowerCase().includes(q) ||
+      (s.company_name || '').toLowerCase().includes(q)
+    ));
+  }, 150);
+}
+
+/* ─── Populate stock select in Update modal ────────── */
+function populateUpdateSelect(stocks) {
+  const sel = document.getElementById('update-stock-select');
+  sel.innerHTML = '<option value="">-- Select Symbol --</option>' +
+    stocks.map(s => `<option value="${s.stock_id}" data-qty="${s.shares_available}">${escHtml(s.symbol)} – ${escHtml(s.company_name)}</option>`).join('');
+}
+
+function updateCurrentQty(sel) {
+  const opt = sel.options[sel.selectedIndex];
+  document.getElementById('current-qty-display').value =
+    opt.value ? Number(opt.dataset.qty).toLocaleString() : '';
+}
+
+function openUpdateForStock(stockId) {
+  const sel = document.getElementById('update-stock-select');
+  for (let i = 0; i < sel.options.length; i++) {
+    if (sel.options[i].value == stockId) { sel.selectedIndex = i; updateCurrentQty(sel); break; }
+  }
+  openModal('modal-update-stock');
+}
+
+/* ─── Submit stock update ───────────────────────────── */
+function submitStockUpdate() {
+  const sel     = document.getElementById('update-stock-select');
+  const stock_id = sel.value;
+  const new_qty  = document.getElementById('new-qty-input').value;
+  const reason   = document.getElementById('update-reason').value.trim();
+
+  if (!stock_id)             return showToast('⚠ Please select a stock', 'amber');
+  if (new_qty === '')        return showToast('⚠ Please enter a new quantity', 'amber');
+  if (parseInt(new_qty) < 0) return showToast('⚠ Quantity cannot be negative', 'amber');
+  if (!reason)               return showToast('⚠ Please provide a reason', 'amber');
+
+  fetchJSON(API + 'submit_stock_update.php', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ stock_id: parseInt(stock_id), new_quantity: parseInt(new_qty), reason })
+  })
+  .then(d => {
+    if (d.success) {
+      closeModal('modal-update-stock');
+      showToast('📨 Update request sent to Auditor for approval', 'gold');
+      sel.selectedIndex = 0;
+      document.getElementById('current-qty-display').value = '';
+      document.getElementById('new-qty-input').value        = '';
+      document.getElementById('update-reason').value        = '';
+    } else {
+      showToast('❌ ' + (d.error || 'Submission failed'), 'red');
+    }
+  })
+  .catch(() => {}); // centralized handler already showed toast
+}
+
+/* ─── Purchase Requests ─────────────────────────────── */
+// FIX #1: Single declaration of purchaseRequestsData (duplicate removed)
+let purchaseRequestsData = [];
+
+// FIX #1: Single definition of loadPurchaseRequests (duplicate removed)
+function loadPurchaseRequests() {
+  fetchJSON(API + 'get_purchase_requests.php')
+    .then(rows => {
+      purchaseRequestsData = rows;
+
+      const pending  = rows.filter(r => r.status === 'Pending').length;
+      const alertEl  = document.getElementById('requests-alert-text');
+      alertEl.textContent = pending > 0
+        ? `${pending} purchase request${pending > 1 ? 's are' : ' is'} awaiting your confirmation of stock availability and pricing.`
+        : 'All purchase requests have been processed.';
+
+      document.getElementById('requests-alert').className =
+        'alert ' + (pending > 0 ? 'alert-amber' : 'alert-green');
+
+      document.getElementById('pending-badge').textContent = pending;
+
+      renderRequests(rows);
+    })
+    .catch(() => {}); // centralized handler already showed toast
+}
+
+function renderRequests(rows) {
+  const tbody = document.getElementById('requests-tbody');
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text-lo);padding:20px;">No requests found</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(r => {
+    const sc = r.status === 'Confirmed' ? 'badge-green'
+             : r.status === 'Pending'   ? 'badge-amber' : 'badge-red';
+    const prioClass = r.priority === 'Urgent' ? 'badge-red'
+                    : r.priority === 'High'   ? 'badge-amber' : 'badge-gray';
+    const action = r.status === 'Pending'
+      ? `<div style="display:flex;gap:6px;">
+           <button class="btn btn-sm btn-success" onclick="openConfirmModalFromRequest(${r.request_id})">Confirm</button>
+           <button class="btn btn-sm btn-danger"  onclick="quickReject(${r.request_id})">Reject</button>
+         </div>`
+      : `<span style="font-size:11px;color:var(--text-lo)">${escHtml(r.sm_note || '—')}</span>`;
+
+    return `<tr>
+      <td class="mono">${escHtml(String(r.request_id))}</td>
+      <td><b>${escHtml(r.symbol)}</b></td>
+      <td>${escHtml(String(r.quantity))}</td>
+      <td>$${parseFloat(r.target_price).toFixed(2)}</td>
+      <td>${Number(r.shares_available).toLocaleString()}</td>
+      <td>$${parseFloat(r.price_per_share).toFixed(2)}</td>
+      <td><span class="badge ${prioClass}">${escHtml(r.priority)}</span></td>
+      <td><span class="badge ${sc}">${escHtml(r.status)}</span></td>
+      <td>${action}</td>
+    </tr>`;
+  }).join('');
+}
+
+function handlePurchaseRequest(action) {
+  const id   = document.getElementById('confirm-request-id').value;
+  const note = document.getElementById('confirm-note').value.trim();
+  if (!id) { showToast('⚠ No request selected', 'amber'); return; }
+
+  fetchJSON(API + 'confirm_purchase_request.php', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ request_id: parseInt(id), action, sm_note: note })
+  })
+  .then(d => {
+    if (d.success) {
+      closeModal('modal-confirm-stock');
+      document.getElementById('confirm-note').value = '';
+      showToast(
+        action === 'confirm'
+          ? '✅ Stock availability confirmed — Trade Manager notified'
+          : '❌ Purchase request rejected',
+        action === 'confirm' ? 'green' : 'red'
+      );
+      loadPurchaseRequests();
+    } else {
+      showToast('❌ ' + (d.error || 'Action failed'), 'red');
+    }
+  })
+  .catch(() => {}); // centralized handler already showed toast
+}
+
+function quickReject(requestId) {
+  if (!confirm('Reject this purchase request?')) return;
+  fetchJSON(API + 'confirm_purchase_request.php', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ request_id: requestId, action: 'reject', sm_note: 'Rejected by Stock Manager' })
+  })
+  .then(d => {
+    if (d.success) { showToast('❌ Request rejected', 'red'); loadPurchaseRequests(); }
+    else showToast('❌ ' + (d.error || 'Failed'), 'red');
+  })
+  .catch(() => {});
+}
+
+/* ─── Open confirm modal from Purchase Requests table ── */
+function openConfirmModalFromRequest(requestId) {
+  // FIX #2: Guard against missing data (e.g. if data hasn't loaded yet)
+  const r = purchaseRequestsData.find(x => x.request_id == requestId);
+  if (!r) {
+    showToast('⚠ Request data not loaded yet. Please wait and try again.', 'amber');
+    return;
+  }
+
+  document.getElementById('confirm-symbol').textContent    = escHtml(r.symbol + ' – ' + (r.company_name || ''));
+  document.getElementById('confirm-available').textContent = Number(r.shares_available).toLocaleString();
+  document.getElementById('confirm-price').textContent     = '$' + parseFloat(r.price_per_share).toFixed(2);
+  // FIX #7: Use dynamic requester name instead of hardcoded 'Trade Manager'
+  document.getElementById('confirm-requester').textContent = r.requested_by_name || 'Trade Manager';
+  document.getElementById('confirm-qty').textContent       = r.quantity;
+  document.getElementById('confirm-request-id').value      = r.request_id;
+  document.getElementById('confirm-note').value            = '';
+
+  openModal('modal-confirm-stock');
+}
+
+/* ─── Valuation Summary ─────────────────────────────── */
+function loadValuationSummary() {
+  fetchJSON(API + 'sm_dashboard_stats.php')
+    .then(d => {
+      // FIX #3 (also here): Guard against null portfolio_value
+      const pv = parseFloat(d.portfolio_value) || 0;
+      document.getElementById('valuation-summary').innerHTML = `
+        <div class="info-row"><span class="label">Total Portfolio Value</span><span class="value">$${pv.toLocaleString(undefined,{maximumFractionDigits:0})}</span></div>
+        <div class="info-row"><span class="label">Stocks in Inventory</span><span class="value">${d.total_stocks} symbols</span></div>
+        <div class="info-row"><span class="label">Approved Updates</span><span class="value">${d.approved_updates}</span></div>
+        <div class="info-row"><span class="label">Pending Confirmations</span><span class="value" style="color:var(--amber)">${d.pending_confirmations}</span></div>
+        <div class="info-row"><span class="label">Next Report Due</span><span class="value" style="color:var(--amber)">2026-04-01</span></div>
+      `;
+    })
+    .catch(() => {});
+}
+
+/* ─── Bar Chart ─────────────────────────────────────── */
+function drawChart() {
+  const c = document.getElementById('sm-bar-chart');
+  if (!c) return;
+  c.innerHTML = '';
+  const stocks = [
+    {n:'AAPL',a:4800,b:200,s:0},{n:'MSFT',a:2200,b:80,s:0},
+    {n:'TSLA',a:350,b:0,s:150},{n:'NVDA',a:900,b:60,s:0},
+    {n:'AMZN',a:1500,b:0,s:0},{n:'META',a:600,b:0,s:0}
+  ];
+  const mx = Math.max(...stocks.map(s => s.a));
+  stocks.forEach(s => {
+    const g  = document.createElement('div');
+    g.style.cssText = 'flex:1;display:flex;flex-direction:column;align-items:center;';
+    const h  = Math.round(s.a / mx * 150);
+    g.innerHTML = `
+      <div style="display:flex;gap:2px;align-items:flex-end;height:160px;">
+        <div style="width:14px;height:${h}px;background:linear-gradient(to top,rgba(201,168,76,.7),rgba(201,168,76,.2));border-radius:3px 3px 0 0;"></div>
+        ${s.b ? `<div style="width:10px;height:${Math.round(s.b/mx*150)}px;background:linear-gradient(to top,rgba(46,196,122,.7),rgba(46,196,122,.2));border-radius:3px 3px 0 0;"></div>` : ''}
+        ${s.s ? `<div style="width:10px;height:${Math.round(s.s/mx*150)}px;background:linear-gradient(to top,rgba(224,85,85,.7),rgba(224,85,85,.2));border-radius:3px 3px 0 0;"></div>` : ''}
+      </div>
+      <div style="font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--text-lo);margin-top:4px;">${escHtml(s.n)}</div>`;
+    c.appendChild(g);
+  });
+}
+
+/* ─── Utility ───────────────────────────────────────── */
+function escHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+/* ─── Initial load ──────────────────────────────────── */
+// FIX #8: Removed stray debug fetch at the bottom (was a redundant call just logging data)
+(function init() {
+  drawChart();
+  loadDashboard();
+  loadInventory(); // preload so update buttons work
+})();
+</script>
+</body>
+</html>

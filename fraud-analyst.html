@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FinVault – Fraud Analyst</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+<style>
+html, body { height: 100%; overflow: hidden; }
+.app { height: 100vh; display: flex; overflow: hidden; }
+.main-wrap { display: flex; flex-direction: column; height: 100vh; }
+.page-content { flex: 1; overflow-y: auto; padding: 24px 28px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-name">Fin<span>Vault</span></div>
+      <div class="brand-sub">STOCK MANAGEMENT SYSTEM</div>
+    </div>
+    <div class="sidebar-role-pill">FRAUD ANALYST</div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Overview</div>
+      <div class="nav-item active" onclick="showView('dashboard')"><span class="nav-icon">🏠</span> Dashboard</div>
+      <div class="nav-section-label">Investigations</div>
+      <div class="nav-item" onclick="showView('flagged')"><span class="nav-icon">🚨</span> Flagged Transactions <span class="nav-badge">5</span></div>
+      <div class="nav-item" onclick="showView('clarifications')"><span class="nav-icon">💬</span> Clarification Requests</div>
+      <div class="nav-section-label">Reporting</div>
+      <div class="nav-item" onclick="showView('reports')"><span class="nav-icon">📄</span> Investigation Reports</div>
+      <div class="nav-item" onclick="showView('submit-finding')"><span class="nav-icon">📤</span> Submit Finding</div>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="sidebar-logout" onclick="window.location.href='index.html'">⬅ Switch Role</button>
+    </div>
+  </aside>
+
+  <div class="main-wrap">
+    <div class="ticker-wrap"><div class="ticker-inner" id="ticker"></div></div>
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-date" id="topbar-date"></div>
+      <div class="topbar-avatar">FA</div>
+    </div>
+    <div class="page-content">
+
+      <!-- ══ Dashboard ══ -->
+      <div class="view active" id="view-dashboard">
+        <div class="page-header">
+          <div class="page-header-left">
+            <h2>Fraud Analyst Dashboard</h2>
+            <p>Investigate flagged transactions, request clarifications, submit findings to Auditor</p>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('modal-submit-findings')">📤 Submit Finding</button>
+        </div>
+        <div class="stats-row">
+          <div class="stat-card" style="--accent:rgba(224,85,85,.2)"><div class="stat-label">Active Investigations</div><div class="stat-value">5</div><div class="stat-change down">▼ Flagged by Auditor</div></div>
+          <div class="stat-card" style="--accent:rgba(240,168,48,.2)"><div class="stat-label">Awaiting Clarification</div><div class="stat-value">2</div><div class="stat-change neutral">↔ From Trade Manager</div></div>
+          <div class="stat-card" style="--accent:rgba(46,196,122,.2)"><div class="stat-label">Cases Cleared</div><div class="stat-value">28</div><div class="stat-change up">▲ This month</div></div>
+          <div class="stat-card" style="--accent:rgba(155,109,240,.2)"><div class="stat-label">Fraud Confirmed</div><div class="stat-value">2</div><div class="stat-change down">▼ Escalated to legal</div></div>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Suspicious Transactions from Auditor</div><span class="badge badge-red">5 Active</span></div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead><tr><th>Trade ID</th><th>Symbol</th><th>Type</th><th>Amount</th><th>Pattern</th><th>Priority</th><th>Action</th></tr></thead>
+                <tbody>
+                  <tr><td class="mono">TRD-0088</td><td>NVDA</td><td><span class="badge badge-green">BUY</span></td><td>$525,120</td><td>Volume spike ×10x</td><td><span class="badge badge-red">Critical</span></td><td><div style="display:flex;gap:6px;flex-wrap:wrap;"><button class="btn btn-sm btn-outline" onclick="openModal('modal-clarification-fa')">Request Clarif.</button><button class="btn btn-sm btn-danger" onclick="openModal('modal-submit-findings')">Submit Result</button></div></td></tr>
+                  <tr><td class="mono">TRD-0083</td><td>TSLA</td><td><span class="badge badge-red">SELL</span></td><td>$81,785</td><td>Repeat sell pattern</td><td><span class="badge badge-amber">High</span></td><td><div style="display:flex;gap:6px;flex-wrap:wrap;"><button class="btn btn-sm btn-outline" onclick="openModal('modal-clarification-fa')">Request Clarif.</button><button class="btn btn-sm btn-danger" onclick="openModal('modal-submit-findings')">Submit Result</button></div></td></tr>
+                  <tr><td class="mono">TRD-0079</td><td>META</td><td><span class="badge badge-green">BUY</span></td><td>$12,840</td><td>Micro-transactions</td><td><span class="badge badge-amber">Medium</span></td><td><div style="display:flex;gap:6px;flex-wrap:wrap;"><button class="btn btn-sm btn-outline" onclick="openModal('modal-clarification-fa')">Request Clarif.</button><button class="btn btn-sm btn-danger" onclick="openModal('modal-submit-findings')">Submit Result</button></div></td></tr>
+                  <tr><td class="mono">TRD-0071</td><td>AAPL</td><td><span class="badge badge-red">SELL</span></td><td>$48,206</td><td>Earnings window</td><td><span class="badge badge-green">Low</span></td><td><button class="btn btn-sm btn-success" onclick="showToast('✅ TRD-0071 cleared — no fraud detected','green')">Clear</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Investigation Progress</div></div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:18px;">
+                <div>
+                  <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;"><span>TRD-0088 – NVDA Volume</span><span class="mono" style="color:var(--red)">70%</span></div>
+                  <div class="progress-bar"><div class="progress-fill" style="width:70%;background:var(--red);"></div></div>
+                </div>
+                <div>
+                  <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;"><span>TRD-0083 – TSLA Pattern</span><span class="mono" style="color:var(--green)">100%</span></div>
+                  <div class="progress-bar"><div class="progress-fill" style="width:100%;background:var(--green);"></div></div>
+                </div>
+                <div>
+                  <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;"><span>TRD-0079 – META Micro</span><span class="mono" style="color:var(--amber)">45%</span></div>
+                  <div class="progress-bar"><div class="progress-fill" style="width:45%;background:var(--amber);"></div></div>
+                </div>
+                <div>
+                  <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;"><span>TRD-0071 – AAPL Earnings</span><span class="mono" style="color:var(--green)">100%</span></div>
+                  <div class="progress-bar"><div class="progress-fill" style="width:100%;background:var(--green);"></div></div>
+                </div>
+                <div>
+                  <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;"><span>TRD-0065 – Wash Trading</span><span class="mono" style="color:var(--green)">100%</span></div>
+                  <div class="progress-bar"><div class="progress-fill" style="width:100%;background:var(--red);"></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ Flagged Transactions ══ -->
+      <div class="view" id="view-flagged">
+        <div class="page-header">
+          <div class="page-header-left">
+            <h2>Flagged Transactions</h2>
+            <p>All suspicious transactions forwarded by the Auditor for investigation</p>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('modal-clarification-fa')">💬 Request Clarification</button>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Trade ID</th><th>Symbol</th><th>Type</th><th>Qty</th><th>Amount</th><th>Pattern</th><th>Priority</th><th>Received</th><th>Action</th></tr></thead>
+              <tbody>
+                <tr><td class="mono">TRD-0088</td><td>NVDA</td><td><span class="badge badge-green">BUY</span></td><td>600</td><td>$525,120</td><td>Volume spike ×10x</td><td><span class="badge badge-red">Critical</span></td><td class="mono">2026-03-28</td><td><div style="display:flex;gap:6px;"><button class="btn btn-sm btn-outline" onclick="openModal('modal-clarification-fa')">Clarif.</button><button class="btn btn-sm btn-danger" onclick="openModal('modal-submit-findings')">Result</button></div></td></tr>
+                <tr><td class="mono">TRD-0083</td><td>TSLA</td><td><span class="badge badge-red">SELL</span></td><td>500</td><td>$81,785</td><td>Repeated sell pattern</td><td><span class="badge badge-amber">High</span></td><td class="mono">2026-03-27</td><td><div style="display:flex;gap:6px;"><button class="btn btn-sm btn-outline" onclick="openModal('modal-clarification-fa')">Clarif.</button><button class="btn btn-sm btn-danger" onclick="openModal('modal-submit-findings')">Result</button></div></td></tr>
+                <tr><td class="mono">TRD-0079</td><td>META</td><td><span class="badge badge-green">BUY</span></td><td>25</td><td>$12,840</td><td>Micro-transaction pattern</td><td><span class="badge badge-amber">Medium</span></td><td class="mono">2026-03-27</td><td><div style="display:flex;gap:6px;"><button class="btn btn-sm btn-outline" onclick="openModal('modal-clarification-fa')">Clarif.</button><button class="btn btn-sm btn-danger" onclick="openModal('modal-submit-findings')">Result</button></div></td></tr>
+                <tr><td class="mono">TRD-0071</td><td>AAPL</td><td><span class="badge badge-red">SELL</span></td><td>248</td><td>$48,206</td><td>Earnings window timing</td><td><span class="badge badge-green">Low</span></td><td class="mono">2026-03-25</td><td><button class="btn btn-sm btn-success" onclick="showToast('✅ TRD-0071 cleared','green')">Clear</button></td></tr>
+                <tr><td class="mono">TRD-0065</td><td>MSFT</td><td><span class="badge badge-green">BUY</span></td><td>180</td><td>$75,299</td><td>Wash trading scheme</td><td><span class="badge badge-red">Critical</span></td><td class="mono">2026-03-22</td><td><div style="display:flex;gap:6px;"><button class="btn btn-sm btn-danger" onclick="openModal('modal-submit-findings')">Result</button></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ Clarifications ══ -->
+      <div class="view" id="view-clarifications">
+        <div class="page-header">
+          <div class="page-header-left">
+            <h2>Clarification Requests to Trade Manager</h2>
+            <p>Request and track clarifications on flagged trades from Trade Manager</p>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('modal-clarification-fa')">＋ New Clarification Request</button>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Req ID</th><th>Trade ID</th><th>Symbol</th><th>Concern</th><th>Sent To</th><th>Deadline</th><th>Response Received</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td class="mono">CLR-008</td><td class="mono">TRD-0088</td><td>NVDA</td><td>Justify ×600 share buy</td><td>Trade Manager</td><td class="mono">2026-03-30</td><td>—</td><td><span class="badge badge-amber">Awaiting</span></td></tr>
+                <tr><td class="mono">CLR-007</td><td class="mono">TRD-0083</td><td>TSLA</td><td>Explain repeated sell within 2hrs</td><td>Trade Manager</td><td class="mono">2026-03-29</td><td>Portfolio rebalancing</td><td><span class="badge badge-green">Received</span></td></tr>
+                <tr><td class="mono">CLR-006</td><td class="mono">TRD-0079</td><td>META</td><td>Micro-transaction pattern</td><td>Trade Manager</td><td class="mono">2026-03-31</td><td>—</td><td><span class="badge badge-amber">Awaiting</span></td></tr>
+                <tr><td class="mono">CLR-005</td><td class="mono">TRD-0071</td><td>AAPL</td><td>Earnings window timing</td><td>Trade Manager</td><td class="mono">2026-03-28</td><td>Pre-approved by board</td><td><span class="badge badge-green">Received</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ Reports ══ -->
+      <div class="view" id="view-reports">
+        <div class="page-header">
+          <div class="page-header-left">
+            <h2>Fraud Investigation Reports</h2>
+            <p>All investigation results submitted to the Auditor</p>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('modal-submit-findings')">＋ Submit New Finding</button>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Report ID</th><th>Trade ID</th><th>Symbol</th><th>Finding Summary</th><th>Verdict</th><th>Submitted</th><th>Auditor Ack.</th></tr></thead>
+              <tbody>
+                <tr><td class="mono">FIR-022</td><td class="mono">TRD-0083</td><td>TSLA</td><td>Pattern = portfolio rebalancing per board directive — no manipulation</td><td><span class="badge badge-green">CLEAR</span></td><td>2026-03-28</td><td><span class="badge badge-green">Acknowledged</span></td></tr>
+                <tr><td class="mono">FIR-021</td><td class="mono">TRD-0079</td><td>META</td><td>Micro-transactions — 12 similar buys over 3 days, investigation ongoing</td><td><span class="badge badge-amber">SUSPICIOUS</span></td><td>2026-03-27</td><td><span class="badge badge-amber">Pending</span></td></tr>
+                <tr><td class="mono">FIR-019</td><td class="mono">TRD-0071</td><td>AAPL</td><td>Earnings trade pre-approved by board waiver WVR-2026-003</td><td><span class="badge badge-green">CLEAR</span></td><td>2026-03-25</td><td><span class="badge badge-green">Acknowledged</span></td></tr>
+                <tr><td class="mono">FIR-018</td><td class="mono">TRD-0065</td><td>MSFT</td><td>Confirmed wash trading scheme — 3 coordinated accounts, automated 4-second intervals</td><td><span class="badge badge-red">FRAUD CONFIRMED</span></td><td>2026-03-22</td><td><span class="badge badge-green">Acknowledged</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ Submit Finding ══ -->
+      <div class="view" id="view-submit-finding">
+        <div class="page-header">
+          <div class="page-header-left">
+            <h2>Submit Fraud Investigation Result</h2>
+            <p>Send investigation verdict and evidence summary to the Auditor</p>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Investigation Result Form</div></div>
+            <div class="card-body">
+              <div class="form-row">
+                <div class="form-group"><label class="form-label">Trade / Case ID</label><input class="form-control" placeholder="e.g. TRD-0088" /></div>
+                <div class="form-group"><label class="form-label">Symbol</label><input class="form-control" placeholder="e.g. NVDA" /></div>
+              </div>
+              <div class="form-group"><label class="form-label">Investigation Verdict</label>
+                <select class="form-control"><option>CLEAR – No fraud detected</option><option>SUSPICIOUS – Further monitoring required</option><option>FRAUD CONFIRMED – Escalate to legal</option></select>
+              </div>
+              <div class="form-group"><label class="form-label">Evidence Summary</label><textarea class="form-control" rows="5" placeholder="Summarize your investigation findings and evidence collected…"></textarea></div>
+              <div class="form-group"><label class="form-label">Recommended Action</label>
+                <select class="form-control"><option>No action required</option><option>Continue monitoring</option><option>Suspend trader account</option><option>Legal escalation</option><option>Regulatory report</option></select>
+              </div>
+              <div class="form-group"><label class="form-label">Supporting Evidence File</label><input type="file" class="form-control" style="padding:8px;" /></div>
+              <button class="btn btn-primary" style="width:100%;" onclick="submitFinding()">
+  Submit to Auditor
+</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Pending Submissions</div></div>
+            <div class="card-body">
+              <div class="timeline">
+                <div class="tl-item"><div class="tl-dot red">🔎</div><div><div class="tl-meta">TRD-0088 · NVDA · Critical</div><div class="tl-text">Investigation 70% complete. Volume spike origin traced to 2 external accounts. Awaiting bank confirmation.</div></div></div>
+                <div class="tl-item"><div class="tl-dot amber">🔎</div><div><div class="tl-meta">TRD-0079 · META · Medium</div><div class="tl-text">Micro-transaction pattern analysis in progress. 45% complete. Awaiting Trade Manager response CLR-006.</div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Modals -->
+<div class="modal-overlay" id="modal-clarification-fa">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Request Clarification from Trade Manager</div><button class="modal-close" onclick="closeModal('modal-clarification-fa')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Flagged Trade ID</label><input class="form-control" placeholder="e.g. TRD-0088" /></div>
+      <div class="form-group"><label class="form-label">Pattern of Concern</label>
+        <select class="form-control"><option>Volume Spike</option><option>Repeated Pattern</option><option>Micro-Transactions</option><option>Timing Anomaly</option><option>Other</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Clarification Required</label><textarea class="form-control" rows="4" placeholder="What specific information do you need from the Trade Manager?"></textarea></div>
+      <div class="form-group"><label class="form-label">Response Deadline</label><input type="date" class="form-control" /></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-clarification-fa')">Cancel</button>
+  <button class="btn btn-primary" onclick="sendClarification()">Send Request</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-submit-findings">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Submit Fraud Investigation Result</div><button class="modal-close" onclick="closeModal('modal-submit-findings')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Trade / Case ID</label><input class="form-control" placeholder="e.g. TRD-0088" /></div>
+      <div class="form-group"><label class="form-label">Investigation Verdict</label>
+        <select class="form-control"><option>CLEAR – No fraud detected</option><option>SUSPICIOUS – Further monitoring required</option><option>FRAUD CONFIRMED – Escalate to legal</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Evidence Summary</label><textarea class="form-control" rows="4" placeholder="Summarize your investigation findings and evidence…"></textarea></div>
+      <div class="form-group"><label class="form-label">Recommended Action</label>
+        <select class="form-control"><option>No action required</option><option>Continue monitoring</option><option>Suspend trader account</option><option>Legal escalation</option><option>Regulatory report</option></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-submit-findings')">Cancel</button>
+  <button class="btn btn-primary" onclick="submitFinding()">Submit to Auditor</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+const API = 'api/';
+
+// ================= LOAD FLAGGED =================
+async function loadFlagged(){
+  const res = await fetch(API+'get_flagged_transactions.php');
+  const data = await res.json();
+
+  const tbody = document.querySelector('#view-flagged tbody');
+  tbody.innerHTML = '';
+
+  data.forEach(t=>{
+    tbody.innerHTML += `
+    <tr>
+      <td class="mono">${t.trade_id}</td>
+      <td>${t.symbol}</td>
+      <td>${t.type}</td>
+      <td>${t.qty}</td>
+      <td>$${t.amount}</td>
+      <td>${t.pattern}</td>
+      <td><span class="badge badge-red">${t.priority}</span></td>
+      <td class="mono">${t.created_at.split(' ')[0]}</td>
+      <td>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-sm btn-outline" onclick="openClarification('${t.trade_id}')">Clarif.</button>
+          <button class="btn btn-sm btn-danger" onclick="openFinding('${t.trade_id}','${t.symbol}')">Result</button>
+        </div>
+      </td>
+    </tr>`;
+  });
+}
+
+// ================= FINDINGS =================
+let currentTrade = '';
+let currentSymbol = '';
+
+function openFinding(trade,symbol){
+  currentTrade = trade;
+  currentSymbol = symbol;
+  openModal('modal-submit-findings');
+}
+
+async function submitFinding(){
+  const verdict = document.querySelector('#modal-submit-findings select').value;
+  const summary = document.querySelector('#modal-submit-findings textarea').value;
+
+  if(!summary){
+    showToast('⚠ Add evidence summary','amber');
+    return;
+  }
+
+  await fetch(API+'submit_finding.php',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      trade_id: currentTrade,
+      symbol: currentSymbol,
+      verdict,
+      summary,
+      action: verdict
+    })
+  });
+
+  closeModal('modal-submit-findings');
+  showToast('📤 Finding submitted','green');
+}
+
+// ================= CLARIFICATION =================
+let clarificationTrade = '';
+
+function openClarification(trade){
+  clarificationTrade = trade;
+  openModal('modal-clarification-fa');
+}
+
+async function sendClarification(){
+  const pattern = document.querySelector('#modal-clarification-fa select').value;
+  const message = document.querySelector('#modal-clarification-fa textarea').value;
+  const deadline = document.querySelector('#modal-clarification-fa input[type="date"]').value;
+
+  if(!message){
+    showToast('⚠ Enter clarification','amber');
+    return;
+  }
+
+  await fetch(API+'request_clarification.php',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      trade_id: clarificationTrade,
+      pattern,
+      message,
+      deadline
+    })
+  });
+
+  closeModal('modal-clarification-fa');
+  showToast('📨 Request sent','blue');
+}
+
+// ================= EXTRA (KEEP YOUR EXISTING FUNCTIONS) =================
+const TICKER_DATA=[{s:'AAPL',p:'$194.62',c:'+1.24%',up:true},{s:'MSFT',p:'$418.33',c:'+0.87%',up:true},{s:'GOOGL',p:'$171.20',c:'-0.43%',up:false},{s:'AMZN',p:'$209.80',c:'+2.11%',up:true},{s:'TSLA',p:'$163.57',c:'-3.28%',up:false},{s:'META',p:'$511.40',c:'+1.55%',up:true},{s:'NVDA',p:'$875.20',c:'+4.02%',up:true},{s:'JPMC',p:'$198.45',c:'-0.15%',up:false}];
+
+function buildTicker(){
+  const el=document.getElementById('ticker');
+  el.innerHTML=[...TICKER_DATA,...TICKER_DATA].map(t=>`
+    <div class="ticker-item">
+      <span class="ticker-symbol">${t.s}</span>
+      <span class="ticker-price">${t.p}</span>
+      <span class="ticker-change" style="color:var(${t.up?'--green':'--red'})">
+        ${t.up?'▲':'▼'} ${t.c}
+      </span>
+    </div>
+    <span class="ticker-divider"></span>
+  `).join('');
+}
+
+buildTicker();
+
+document.getElementById('topbar-date').textContent =
+  new Date().toLocaleDateString('en-US',{
+    weekday:'short',year:'numeric',month:'short',day:'numeric'
+  });
+
+const VIEWS=['dashboard','flagged','clarifications','reports','submit-finding'];
+const TITLES={
+  dashboard:'Dashboard',
+  flagged:'Flagged Transactions',
+  clarifications:'Clarification Requests',
+  reports:'Investigation Reports',
+  'submit-finding':'Submit Finding'
+};
+
+function showView(id){
+  VIEWS.forEach(v=>
+    document.getElementById('view-'+v)
+    .classList.toggle('active',v===id)
+  );
+  document.getElementById('topbar-title').textContent =
+    TITLES[id]||'Dashboard';
+}
+
+function openModal(id){
+  document.getElementById(id).classList.add('open');
+}
+
+function closeModal(id){
+  document.getElementById(id).classList.remove('open');
+}
+
+document.querySelectorAll('.modal-overlay').forEach(o=>
+  o.addEventListener('click',e=>{
+    if(e.target===o) o.classList.remove('open');
+  })
+);
+
+const TC={
+  green:'var(--green)',
+  red:'var(--red)',
+  amber:'var(--amber)',
+  blue:'var(--blue)',
+  gold:'var(--gold)'
+};
+
+function showToast(msg,color='green'){
+  const c=document.getElementById('toast-container');
+  const t=document.createElement('div');
+  t.className='toast';
+  t.style.borderLeftColor=TC[color]||TC.green;
+  t.innerHTML=`<span>${msg}</span>`;
+  c.appendChild(t);
+  setTimeout(()=>t.remove(),4200);
+}
+
+// ================= INIT =================
+loadFlagged();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FinVault – Auditor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+<style>
+  html, body { height: 100%; overflow: hidden; }
+  .app        { height: 100vh; overflow: hidden; display: flex; }
+  .main-wrap  { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+  .ticker-wrap, .topbar { flex-shrink: 0; }
+  .page-content { flex: 1; overflow-y: auto; padding: 24px 28px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-name">Fin<span>Vault</span></div>
+      <div class="brand-sub">STOCK MANAGEMENT SYSTEM</div>
+    </div>
+    <div class="sidebar-role-pill">AUDITOR</div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Overview</div>
+      <div class="nav-item active" onclick="showView('dashboard')"><span class="nav-icon">🏠</span> Dashboard</div>
+      <div class="nav-section-label">Reviews</div>
+      <div class="nav-item" onclick="showView('stock-approvals')"><span class="nav-icon">✅</span> Stock Qty Approvals <span class="nav-badge">2</span></div>
+      <div class="nav-item" onclick="showView('trade-review')"><span class="nav-icon">🔍</span> Trade Review <span class="nav-badge">9</span></div>
+      <div class="nav-section-label">Compliance</div>
+      <div class="nav-item" onclick="showView('compliance')"><span class="nav-icon">⚖️</span> Compliance &amp; Regulatory</div>
+      <div class="nav-item" onclick="showView('corrections')"><span class="nav-icon">📝</span> Issue Corrections</div>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="sidebar-logout" onclick="window.location.href='index.html'">⬅ Switch Role</button>
+    </div>
+  </aside>
+
+  <div class="main-wrap">
+    <div class="ticker-wrap"><div class="ticker-inner" id="ticker"></div></div>
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-date" id="topbar-date"></div>
+      <div class="topbar-avatar">AU</div>
+    </div>
+
+    <div class="page-content">
+
+      <!-- ══ Dashboard ══ -->
+      <div class="view active" id="view-dashboard">
+        <div class="page-header">
+          <div class="page-header-left">
+            <h2>Auditor Dashboard</h2>
+            <p>Review reports, approve updates, issue compliance directives, forward fraud alerts</p>
+          </div>
+        </div>
+        <div class="stats-row">
+          <div class="stat-card" style="--accent:rgba(201,168,76,.2)"><div class="stat-label">Reports Pending</div><div class="stat-value">9</div><div class="stat-change down">▼ Requires review</div></div>
+          <div class="stat-card" style="--accent:rgba(46,196,122,.2)"><div class="stat-label">Approved Today</div><div class="stat-value">3</div><div class="stat-change up">▲ Stock updates approved</div></div>
+          <div class="stat-card" style="--accent:rgba(240,168,48,.2)"><div class="stat-label">Stock Updates Pending</div><div class="stat-value">2</div><div class="stat-change neutral">↔ Awaiting approval</div></div>
+          <div class="stat-card" style="--accent:rgba(224,85,85,.2)"><div class="stat-label">Forwarded to Fraud</div><div class="stat-value">3</div><div class="stat-change down">▼ This week</div></div>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Pending Stock Qty Approvals</div><span class="badge badge-amber">2 Pending</span></div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead><tr><th>Symbol</th><th>Old Qty</th><th>New Qty</th><th>Change</th><th>Action</th></tr></thead>
+                <tbody id="dashboard-stock-body">
+                  <!-- Populated by loadDashboardStock() -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Quick Actions</div></div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <button class="btn btn-outline" style="justify-content:flex-start;" onclick="showView('trade-review')">🔍 Review Trade Transactions</button>
+                <button class="btn btn-outline" style="justify-content:flex-start;" onclick="openModal('modal-compliance-send')">📤 Send Compliance Review to Officer</button>
+                <button class="btn btn-outline" style="justify-content:flex-start;" onclick="openModal('modal-fraud-forward')">🚨 Forward Suspicious Transaction</button>
+                <button class="btn btn-outline" style="justify-content:flex-start;" onclick="openModal('modal-correction')">📝 Issue Correction Recommendation</button>
+                <button class="btn btn-outline" style="justify-content:flex-start;" onclick="showView('compliance')">⚖️ View Regulatory Policy Updates</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ Stock Approvals ══ -->
+      <div class="view" id="view-stock-approvals">
+        <div class="page-header">
+          <div class="page-header-left">
+            <h2>Stock Quantity Approvals</h2>
+            <p>Approve or reject stock quantity updates submitted by Stock Manager</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Symbol</th><th>Company</th><th>Old Qty</th><th>New Qty</th><th>Change</th><th>Reason</th><th>Requested</th><th>Action</th></tr></thead>
+              <tbody id="stock-approvals-body">
+                <!-- Populated by loadStockApprovals() -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ Trade Review ══ -->
+      <div class="view" id="view-trade-review">
+        <div class="page-header">
+          <div class="page-header-left">
+            <h2>Transaction Review</h2>
+            <p>Review trade transaction records submitted by Trade Manager</p>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('modal-compliance-send')">📤 Send Compliance Review</button>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Trade ID</th><th>Symbol</th><th>Type</th><th>Qty</th><th>Total</th><th>Trader</th><th>Risk Score</th><th>Action</th></tr></thead>
+              <tbody id="trade-body">
+                <!-- Populated by loadTrades() -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ Compliance ══ -->
+      <div class="view" id="view-compliance">
+        <div class="page-header">
+          <div class="page-header-left">
+            <h2>Compliance &amp; Regulatory</h2>
+            <p>Receive policy updates from Compliance Officer, review fraud investigation results</p>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('modal-compliance-send')">📤 Send Compliance Review</button>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Regulatory Policy Updates (from Compliance Officer)</div></div>
+            <div class="card-body">
+              <div class="timeline">
+                <div class="tl-item"><div class="tl-dot blue">📋</div><div><div class="tl-meta">2026-03-28 · Compliance Officer</div><div class="tl-text">New SEC Rule 17a-4: <b>All buy transactions &gt;$100K must be dual-approved</b> effective 2026-04-01</div></div></div>
+                <div class="tl-item"><div class="tl-dot blue">📋</div><div><div class="tl-meta">2026-03-20 · Compliance Officer</div><div class="tl-text">Updated AML threshold: <b>flag all same-day multi-trades exceeding $250K</b></div></div></div>
+                <div class="tl-item"><div class="tl-dot blue">📋</div><div><div class="tl-meta">2026-03-10 · Compliance Officer</div><div class="tl-text">Insider trading policy: <b>30-day trade window restriction for executives</b></div></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Fraud Investigation Results (from Fraud Analyst)</div></div>
+            <div class="card-body">
+              <div class="timeline">
+                <div class="tl-item"><div class="tl-dot green">✓</div><div><div class="tl-meta">2026-03-28 · FIR-022 · Fraud Analyst</div><div class="tl-text"><b>TRD-0083 CLEAR:</b> TSLA sell pattern explained by portfolio rebalancing per board directive. No fraud. <em>No action required.</em></div></div></div>
+                <div class="tl-item"><div class="tl-dot amber">⚠</div><div><div class="tl-meta">2026-03-27 · FIR-021 · Fraud Analyst</div><div class="tl-text"><b>TRD-0079 SUSPICIOUS:</b> 12 similar META micro-buys over 3 days. Awaiting Trade Manager clarification CLR-006. <em>Continue monitoring.</em></div></div></div>
+                <div class="tl-item"><div class="tl-dot green">✓</div><div><div class="tl-meta">2026-03-25 · FIR-019 · Fraud Analyst</div><div class="tl-text"><b>TRD-0071 CLEAR:</b> AAPL earnings window trade confirmed pre-approved under board waiver WVR-2026-003. <em>No action required.</em></div></div></div>
+                <div class="tl-item"><div class="tl-dot red">🛡️</div><div><div class="tl-meta">2026-03-22 · FIR-018 · Fraud Analyst</div><div class="tl-text"><b>TRD-0065 FRAUD CONFIRMED:</b> MSFT bulk buy confirmed as wash trading — 3 coordinated accounts, trades within 4-second intervals. <em>Legal escalation.</em></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ Corrections ══ -->
+      <div class="view" id="view-corrections">
+        <div class="page-header">
+          <div class="page-header-left">
+            <h2>Issue Correction Recommendations</h2>
+            <p>Send audit correction instructions to Stock Manager or Trade Manager</p>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('modal-correction')">＋ Issue Correction</button>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Issued Corrections History</div></div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Correction ID</th><th>Sent To</th><th>Related ID</th><th>Issue</th><th>Priority</th><th>Deadline</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td class="mono">COR-022</td><td>Stock Manager</td><td>RPT-2026-010</td><td>Missing stock movement entries</td><td><span class="badge badge-amber">High</span></td><td class="mono">2026-03-30</td><td><span class="badge badge-amber">Open</span></td></tr>
+                <tr><td class="mono">COR-021</td><td>Stock Manager</td><td>TSLA Qty</td><td>Quantity mismatch — Q4 reconciliation</td><td><span class="badge badge-amber">High</span></td><td class="mono">2026-03-29</td><td><span class="badge badge-amber">Open</span></td></tr>
+                <tr><td class="mono">COR-020</td><td>Trade Manager</td><td>TRD-0079</td><td>Missing trade justification document</td><td><span class="badge badge-green">Standard</span></td><td class="mono">2026-03-28</td><td><span class="badge badge-green">Resolved</span></td></tr>
+                <tr><td class="mono">COR-018</td><td>Stock Manager</td><td>RPT-2026-005</td><td>Valuation formula error — NVDA</td><td><span class="badge badge-red">Urgent</span></td><td class="mono">2026-03-20</td><td><span class="badge badge-green">Resolved</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /page-content -->
+  </div><!-- /main-wrap -->
+</div><!-- /app -->
+
+<!-- ── Modal: Correction Recommendation ── -->
+<div class="modal-overlay" id="modal-correction">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Issue Correction Recommendation</div><button class="modal-close" onclick="closeModal('modal-correction')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Send To</label>
+        <select id="corr-to" class="form-control">
+          <option>Stock Manager</option>
+          <option>Trade Manager</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Related Report / Trade ID</label>
+          <input id="corr-ref" class="form-control" placeholder="e.g. RPT-2026-010" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Priority</label>
+          <select id="corr-priority" class="form-control">
+            <option>Standard</option>
+            <option>High</option>
+            <option>Urgent</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Correction Details</label>
+        <textarea id="corr-details" class="form-control" rows="4" placeholder="Describe the issue and required correction…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Deadline for Correction</label>
+        <input id="corr-deadline" type="date" class="form-control" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-correction')">Cancel</button>
+      <button class="btn btn-primary" onclick="issueCorrection()">Issue Recommendation</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Send Compliance Review ── -->
+<div class="modal-overlay" id="modal-compliance-send">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Send Compliance Review</div><button class="modal-close" onclick="closeModal('modal-compliance-send')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Trade / Report Reference</label>
+        <input id="comp-ref" class="form-control" placeholder="e.g. TRD-0092" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Risk Level</label>
+        <select id="comp-risk" class="form-control">
+          <option>Low</option>
+          <option>Medium</option>
+          <option>High</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Compliance Findings</label>
+        <textarea id="comp-findings" class="form-control" rows="4" placeholder="Describe the compliance findings…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Send To</label>
+        <select class="form-control">
+          <option>Compliance Officer</option>
+          <option>Compliance Officer + Fraud Analyst</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-compliance-send')">Cancel</button>
+      <button class="btn btn-primary" onclick="sendComplianceReview()">Send Review</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Forward to Fraud Analyst ── -->
+<div class="modal-overlay" id="modal-fraud-forward">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Forward Suspicious Transaction to Fraud Analyst</div><button class="modal-close" onclick="closeModal('modal-fraud-forward')">✕</button></div>
+    <div class="modal-body">
+      <div class="alert alert-red">🚨 <span>This will flag the transaction and notify the Fraud Analyst immediately.</span></div>
+      <div class="form-group">
+        <label class="form-label">Trade ID</label>
+        <input id="fraud-trade" class="form-control" placeholder="e.g. TRD-0088" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Suspicious Pattern Detected</label>
+        <select id="fraud-pattern" class="form-control">
+          <option>Volume Anomaly</option>
+          <option>Repeated Same-Day Trades</option>
+          <option>Insider Trading Indicator</option>
+          <option>Wash Trading Pattern</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea id="fraud-desc" class="form-control" rows="4" placeholder="Describe the suspicious behavior observed…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-fraud-forward')">Cancel</button>
+      <button class="btn btn-danger" onclick="forwardToFraud()">Forward to Fraud Analyst</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+const API = 'api/';
+
+/* ===================== TICKER ===================== */
+const TICKER_DATA = [
+  {s:'AAPL', p:'$194.62', c:'+1.24%', up:true},
+  {s:'MSFT', p:'$418.33', c:'+0.87%', up:true},
+  {s:'GOOGL',p:'$171.20', c:'-0.43%', up:false},
+  {s:'AMZN', p:'$209.80', c:'+2.11%', up:true},
+  {s:'TSLA', p:'$163.57', c:'-3.28%', up:false},
+  {s:'META', p:'$511.40', c:'+1.55%', up:true},
+  {s:'NVDA', p:'$875.20', c:'+4.02%', up:true},
+  {s:'JPMC', p:'$198.45', c:'-0.15%', up:false}
+];
+(function buildTicker() {
+  const el = document.getElementById('ticker');
+  el.innerHTML = [...TICKER_DATA, ...TICKER_DATA].map(t =>
+    `<div class="ticker-item">
+      <span class="ticker-symbol">${t.s}</span>
+      <span class="ticker-price">${t.p}</span>
+      <span class="ticker-change" style="color:var(${t.up ? '--green' : '--red'})">${t.up ? '▲' : '▼'} ${t.c}</span>
+    </div><span class="ticker-divider"></span>`
+  ).join('');
+})();
+
+document.getElementById('topbar-date').textContent = new Date().toLocaleDateString();
+
+/* ===================== NAV ===================== */
+const VIEWS  = ['dashboard','stock-approvals','trade-review','compliance','corrections'];
+const TITLES = {
+  'dashboard':       'Dashboard',
+  'stock-approvals': 'Stock Qty Approvals',
+  'trade-review':    'Transaction Review',
+  'compliance':      'Compliance & Regulatory',
+  'corrections':     'Issue Corrections'
+};
+
+function showView(id) {
+  VIEWS.forEach(v => document.getElementById('view-' + v).classList.toggle('active', v === id));
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const activeNavItem = [...document.querySelectorAll('.nav-item')].find(el =>
+    el.getAttribute('onclick') && el.getAttribute('onclick').includes("'" + id + "'")
+  );
+  if (activeNavItem) activeNavItem.classList.add('active');
+  document.getElementById('topbar-title').textContent = TITLES[id];
+}
+
+/* ===================== MODALS ===================== */
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+/* ===================== TOAST ===================== */
+const TC = { green:'var(--green)', red:'var(--red)', amber:'var(--amber)', blue:'var(--blue)' };
+function showToast(msg, color = 'green') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.style.borderLeftColor = TC[color] || TC.green;
+  t.innerHTML = `<span>${msg}</span>`;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+}
+
+/* ===================== RISK METER HTML ===================== */
+function riskMeterHTML(score) {
+  // score expected as string: 'Low', 'Medium', 'High', or numeric 1-5
+  let filled = 2, colorClass = 'filled-low', label = 'Low', labelColor = 'var(--green)';
+  const s = String(score).toLowerCase();
+  if (s === 'high' || Number(score) >= 4) {
+    filled = 5; colorClass = 'filled-high'; label = 'High'; labelColor = 'var(--red)';
+  } else if (s === 'medium' || s === 'med' || Number(score) === 3) {
+    filled = 3; colorClass = 'filled-med'; label = 'Med'; labelColor = 'var(--amber)';
+  }
+  const bars = Array.from({length: 5}, (_, i) =>
+    `<div class="risk-bar ${i < filled ? colorClass : ''}"></div>`
+  ).join('');
+  return `<div style="display:flex;align-items:center;gap:8px;">
+    <div class="risk-meter" style="width:60px;">${bars}</div>
+    <span style="font-size:11px;color:${labelColor}">${label}</span>
+  </div>`;
+}
+
+/* ===================== STOCK APPROVALS – FULL PAGE ===================== */
+async function loadStockApprovals() {
+  try {
+    const res  = await fetch(API + 'get_pending_stock_updates.php');
+    const data = await res.json();
+    const tbody = document.getElementById('stock-approvals-body');
+    tbody.innerHTML = '';
+
+    if (!data.length) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted)">No pending approvals</td></tr>';
+      return;
+    }
+
+    data.forEach(r => {
+      const change = r.new_quantity - r.old_quantity;
+      tbody.innerHTML += `
+        <tr>
+          <td>${r.symbol}</td>
+          <td>${r.company_name}</td>
+          <td>${Number(r.old_quantity).toLocaleString()}</td>
+          <td>${Number(r.new_quantity).toLocaleString()}</td>
+          <td style="color:${change >= 0 ? 'var(--green)' : 'var(--red)'}">${change >= 0 ? '+' : ''}${change}</td>
+          <td>${r.reason}</td>
+          <td class="mono">${r.requested_at ? r.requested_at.substring(0,10) : ''}</td>
+          <td>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-sm btn-success" onclick="approveStock(${r.request_id})">Approve</button>
+              <button class="btn btn-sm btn-danger"  onclick="rejectStock(${r.request_id})">Reject</button>
+            </div>
+          </td>
+        </tr>`;
+    });
+  } catch (e) {
+    console.error('loadStockApprovals error:', e);
+    // Fallback static data so UI is never empty during development
+    const tbody = document.getElementById('stock-approvals-body');
+    tbody.innerHTML = `
+      <tr>
+        <td>TSLA</td><td>Tesla Inc.</td><td>400</td><td>350</td>
+        <td style="color:var(--red)">-50</td><td>Write-off from damaged/delisted shares</td>
+        <td class="mono">2026-03-27</td>
+        <td><div style="display:flex;gap:6px;">
+          <button class="btn btn-sm btn-success" onclick="showToast('✅ TSLA approved','green')">Approve</button>
+          <button class="btn btn-sm btn-danger" onclick="openModal('modal-correction')">Reject</button>
+        </div></td>
+      </tr>
+      <tr>
+        <td>AMZN</td><td>Amazon.com Inc.</td><td>1,480</td><td>1,500</td>
+        <td style="color:var(--green)">+20</td><td>Inventory restock from broker</td>
+        <td class="mono">2026-03-26</td>
+        <td><div style="display:flex;gap:6px;">
+          <button class="btn btn-sm btn-success" onclick="showToast('✅ AMZN approved','green')">Approve</button>
+          <button class="btn btn-sm btn-danger" onclick="openModal('modal-correction')">Reject</button>
+        </div></td>
+      </tr>`;
+  }
+}
+
+/* ===================== STOCK APPROVALS – DASHBOARD SNIPPET ===================== */
+async function loadDashboardStock() {
+  try {
+    const res  = await fetch(API + 'get_pending_stock_updates.php');
+    const data = await res.json();
+    const tbody = document.getElementById('dashboard-stock-body');
+    tbody.innerHTML = '';
+
+    const rows = data.slice(0, 3); // show up to 3 on dashboard
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted)">No pending approvals</td></tr>';
+      return;
+    }
+
+    rows.forEach(r => {
+      const change = r.new_quantity - r.old_quantity;
+      tbody.innerHTML += `
+        <tr>
+          <td>${r.symbol}</td>
+          <td>${Number(r.old_quantity).toLocaleString()}</td>
+          <td>${Number(r.new_quantity).toLocaleString()}</td>
+          <td style="color:${change >= 0 ? 'var(--green)' : 'var(--red)'}">${change >= 0 ? '+' : ''}${change}</td>
+          <td><div style="display:flex;gap:6px;">
+            <button class="btn btn-sm btn-success" onclick="approveStock(${r.request_id})">Approve</button>
+            <button class="btn btn-sm btn-danger"  onclick="openModal('modal-correction')">Correction</button>
+          </div></td>
+        </tr>`;
+    });
+  } catch (e) {
+    // Fallback static rows
+    const tbody = document.getElementById('dashboard-stock-body');
+    tbody.innerHTML = `
+      <tr>
+        <td>TSLA</td><td>400</td><td>350</td><td style="color:var(--red)">-50</td>
+        <td><div style="display:flex;gap:6px;">
+          <button class="btn btn-sm btn-success" onclick="showToast('✅ TSLA quantity update approved','green')">Approve</button>
+          <button class="btn btn-sm btn-danger"  onclick="openModal('modal-correction')">Correction</button>
+        </div></td>
+      </tr>
+      <tr>
+        <td>AMZN</td><td>1,480</td><td>1,500</td><td style="color:var(--green)">+20</td>
+        <td><div style="display:flex;gap:6px;">
+          <button class="btn btn-sm btn-success" onclick="showToast('✅ AMZN quantity update approved','green')">Approve</button>
+          <button class="btn btn-sm btn-danger"  onclick="openModal('modal-correction')">Correction</button>
+        </div></td>
+      </tr>`;
+  }
+}
+
+/* ===================== APPROVE STOCK ===================== */
+async function approveStock(id) {
+  try {
+    await fetch(API + 'approve_stock_update.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ request_id: id })
+    });
+  } catch (e) { /* offline / dev mode */ }
+  showToast('✅ Stock update approved', 'green');
+  loadStockApprovals();
+  loadDashboardStock();
+}
+
+/* ===================== REJECT STOCK ===================== */
+async function rejectStock(id) {
+  const note = prompt('Enter rejection reason:');
+  if (!note) return;
+  try {
+    await fetch(API + 'reject_stock_update.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ request_id: id, note })
+    });
+  } catch (e) { /* offline / dev mode */ }
+  showToast('❌ Stock update rejected', 'red');
+  loadStockApprovals();
+  loadDashboardStock();
+}
+
+/* ===================== TRADE REVIEW ===================== */
+async function loadTrades() {
+  try {
+    const res  = await fetch(API + 'get_trades_for_auditor.php');
+    const data = await res.json();
+    const tbody = document.getElementById('trade-body');
+    tbody.innerHTML = '';
+
+    if (!data.length) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted)">No trades to review</td></tr>';
+      return;
+    }
+
+    data.forEach(t => {
+      const isHigh = String(t.risk_score).toLowerCase() === 'high' || Number(t.risk_score) >= 4;
+      const actionButtons = isHigh
+        ? `<button class="btn btn-sm btn-danger" onclick="openFraudModal('${t.trade_ref}')">Forward Fraud</button>`
+        : `<div style="display:flex;gap:6px;">
+             <button class="btn btn-sm btn-success" onclick="clearTrade(${t.trade_id})">Clear</button>
+             <button class="btn btn-sm btn-danger"  onclick="openFraudModal('${t.trade_ref}')">Flag</button>
+           </div>`;
+      tbody.innerHTML += `
+        <tr>
+          <td class="mono">${t.trade_ref}</td>
+          <td>${t.symbol}</td>
+          <td><span class="badge badge-${t.trade_type === 'BUY' ? 'green' : 'red'}">${t.trade_type}</span></td>
+          <td>${Number(t.quantity).toLocaleString()}</td>
+          <td>$${Number(t.total_value).toLocaleString()}</td>
+          <td>${t.executed_by_name}</td>
+          <td>${riskMeterHTML(t.risk_score)}</td>
+          <td>${actionButtons}</td>
+        </tr>`;
+    });
+  } catch (e) {
+    // Fallback static trade data
+    const tbody = document.getElementById('trade-body');
+    tbody.innerHTML = `
+      <tr>
+        <td class="mono">TRD-0092</td><td>AAPL</td>
+        <td><span class="badge badge-green">BUY</span></td>
+        <td>200</td><td>$38,924</td><td>Trade Manager</td>
+        <td>${riskMeterHTML('Low')}</td>
+        <td><div style="display:flex;gap:6px;">
+          <button class="btn btn-sm btn-success" onclick="showToast('✅ TRD-0092 cleared','green')">Clear</button>
+          <button class="btn btn-sm btn-danger"  onclick="openFraudModal('TRD-0092')">Flag</button>
+        </div></td>
+      </tr>
+      <tr>
+        <td class="mono">TRD-0091</td><td>TSLA</td>
+        <td><span class="badge badge-red">SELL</span></td>
+        <td>150</td><td>$24,536</td><td>Trade Manager</td>
+        <td>${riskMeterHTML('Medium')}</td>
+        <td><div style="display:flex;gap:6px;">
+          <button class="btn btn-sm btn-success" onclick="showToast('✅ TRD-0091 cleared','green')">Clear</button>
+          <button class="btn btn-sm btn-danger"  onclick="openFraudModal('TRD-0091')">Flag</button>
+        </div></td>
+      </tr>
+      <tr>
+        <td class="mono">TRD-0088</td><td>NVDA</td>
+        <td><span class="badge badge-green">BUY</span></td>
+        <td>600</td><td>$525,120</td><td>Trade Manager</td>
+        <td>${riskMeterHTML('High')}</td>
+        <td><button class="btn btn-sm btn-danger" onclick="openFraudModal('TRD-0088')">Forward Fraud</button></td>
+      </tr>
+      <tr>
+        <td class="mono">TRD-0083</td><td>TSLA</td>
+        <td><span class="badge badge-red">SELL</span></td>
+        <td>500</td><td>$81,785</td><td>Trade Manager</td>
+        <td>${riskMeterHTML('High')}</td>
+        <td><button class="btn btn-sm btn-danger" onclick="openFraudModal('TRD-0083')">Forward Fraud</button></td>
+      </tr>
+      <tr>
+        <td class="mono">TRD-0079</td><td>META</td>
+        <td><span class="badge badge-green">BUY</span></td>
+        <td>25</td><td>$12,785</td><td>Trade Manager</td>
+        <td>${riskMeterHTML('Medium')}</td>
+        <td><button class="btn btn-sm btn-danger" onclick="openFraudModal('TRD-0079')">Forward Fraud</button></td>
+      </tr>
+      <tr>
+        <td class="mono">TRD-0071</td><td>AAPL</td>
+        <td><span class="badge badge-red">SELL</span></td>
+        <td>248</td><td>$48,206</td><td>Trade Manager</td>
+        <td>${riskMeterHTML('Low')}</td>
+        <td><div style="display:flex;gap:6px;">
+          <button class="btn btn-sm btn-success" onclick="showToast('✅ TRD-0071 cleared','green')">Clear</button>
+          <button class="btn btn-sm btn-danger"  onclick="openFraudModal('TRD-0071')">Flag</button>
+        </div></td>
+      </tr>
+      <tr>
+        <td class="mono">TRD-0065</td><td>MSFT</td>
+        <td><span class="badge badge-green">BUY</span></td>
+        <td>180</td><td>$75,299</td><td>Trade Manager</td>
+        <td>${riskMeterHTML('High')}</td>
+        <td><button class="btn btn-sm btn-danger" onclick="openFraudModal('TRD-0065')">Forward Fraud</button></td>
+      </tr>`;
+  }
+}
+
+/* Helper: open fraud modal pre-filled with trade ref */
+function openFraudModal(tradeRef) {
+  document.getElementById('fraud-trade').value = tradeRef || '';
+  openModal('modal-fraud-forward');
+}
+
+/* ===================== CLEAR TRADE ===================== */
+async function clearTrade(id) {
+  try {
+    await fetch(API + 'review_trade.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ trade_id: id, action: 'clear' })
+    });
+  } catch (e) { /* offline / dev mode */ }
+  showToast('✅ Trade cleared', 'green');
+  loadTrades();
+}
+
+/* ===================== FLAG TRADE (inline, no modal) ===================== */
+async function flagTrade(id) {
+  try {
+    await fetch(API + 'review_trade.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ trade_id: id, action: 'flag' })
+    });
+  } catch (e) { /* offline / dev mode */ }
+  showToast('🚨 Trade flagged', 'red');
+  loadTrades();
+}
+
+/* ===================== SEND COMPLIANCE REVIEW ===================== */
+async function sendComplianceReview() {
+  const ref      = document.getElementById('comp-ref').value.trim();
+  const risk     = document.getElementById('comp-risk').value;
+  const findings = document.getElementById('comp-findings').value.trim();
+
+  if (!ref || !findings) {
+    showToast('⚠ Please fill in all fields', 'amber');
+    return;
+  }
+
+  try {
+    await fetch(API + 'send_compliance_review.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ref, risk, findings })
+    });
+  } catch (e) { /* offline / dev mode */ }
+
+  // Clear fields
+  document.getElementById('comp-ref').value      = '';
+  document.getElementById('comp-findings').value = '';
+  closeModal('modal-compliance-send');
+  showToast('📤 Compliance review sent to Compliance Officer', 'blue');
+}
+
+/* ===================== FORWARD TO FRAUD ===================== */
+async function forwardToFraud() {
+  const trade_id = document.getElementById('fraud-trade').value.trim();
+  const pattern  = document.getElementById('fraud-pattern').value;
+  const desc     = document.getElementById('fraud-desc').value.trim();
+
+  if (!trade_id || !desc) {
+    showToast('⚠ Please fill in all fields', 'amber');
+    return;
+  }
+
+  try {
+    await fetch(API + 'forward_to_fraud.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ trade_id, pattern, desc })
+    });
+  } catch (e) { /* offline / dev mode */ }
+
+  // Clear fields
+  document.getElementById('fraud-trade').value = '';
+  document.getElementById('fraud-desc').value  = '';
+  closeModal('modal-fraud-forward');
+  showToast('🚨 Transaction forwarded to Fraud Analyst', 'red');
+}
+
+/* ===================== ISSUE CORRECTION ===================== */
+async function issueCorrection() {
+  const sent_to  = document.getElementById('corr-to').value;
+  const ref      = document.getElementById('corr-ref').value.trim();
+  const priority = document.getElementById('corr-priority').value;
+  const details  = document.getElementById('corr-details').value.trim();
+  const deadline = document.getElementById('corr-deadline').value;
+
+  if (!ref || !details || !deadline) {
+    showToast('⚠ Please fill in all fields', 'amber');
+    return;
+  }
+
+  try {
+    await fetch(API + 'issue_correction.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sent_to, ref, priority, details, deadline })
+    });
+  } catch (e) { /* offline / dev mode */ }
+
+  // Clear fields
+  document.getElementById('corr-ref').value     = '';
+  document.getElementById('corr-details').value = '';
+  document.getElementById('corr-deadline').value= '';
+  closeModal('modal-correction');
+  showToast('📝 Correction recommendation issued', 'amber');
+}
+
+/* ===================== INITIAL LOAD ===================== */
+document.addEventListener('DOMContentLoaded', () => {
+  loadDashboardStock();
+  loadStockApprovals();
+  loadTrades();
+});
+</script>
+</body>
+</html>

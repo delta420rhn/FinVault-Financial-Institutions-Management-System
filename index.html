@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FinVault – Stock Management System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+<style>
+  /* ── Landing screen-fit fix ── */
+  html, body { height: 100%; overflow: hidden; }
+
+  .landing-wrap {
+    height: 100vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 28px 20px 20px;
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, #0d2a50 0%, transparent 70%), var(--navy);
+  }
+
+  /* Tighter spacing to keep everything in view */
+  .landing-logo   { font-size: clamp(36px, 6vw, 58px); margin-bottom: 4px; }
+  .landing-tagline { font-size: 11px; margin-bottom: 20px; }
+  .landing-meta   { margin-bottom: 14px; gap: 16px; }
+  .role-prompt    { margin-bottom: 14px; }
+
+  .role-grid {
+    gap: 12px;
+    max-width: 960px;
+    width: 100%;
+    /* 5 cards in one row on wide screens, wrap gracefully */
+    grid-template-columns: repeat(5, 1fr);
+  }
+  @media (max-width: 1100px) { .role-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 680px)  { .role-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 440px)  { .role-grid { grid-template-columns: 1fr; } }
+
+  .role-card { padding: 20px 14px; }
+  .role-icon  { font-size: 30px; margin-bottom: 10px; }
+  .role-title { font-size: 14px; }
+  .role-desc  { font-size: 11px; }
+
+  .landing-footer { margin-top: 18px; }
+</style>
+</head>
+<body>
+<div class="landing-wrap">
+  <div class="landing-logo">Fin<span>Vault</span></div>
+  <div class="landing-tagline">Financial Institutions' Management System</div>
+  <div class="landing-meta">
+    <span><b>Group:</b> 5</span>
+    <span><b>Course:</b> CSE303L</span>
+    <span><b>Instructor:</b> Noureen Islam</span>
+    <span><b>Module:</b> Buy &amp; Sell Stock</span>
+    <span><b>Submission:</b> 04/03/2026</span>
+  </div>
+  <div class="role-prompt">Select your role to enter the dashboard</div>
+  <div class="role-grid">
+    <a class="role-card" href="stock-manager.html">
+      <span class="role-icon">📦</span>
+      <div class="role-title">Stock Manager</div>
+      <div class="role-desc">Manage inventory, update quantities, confirm availability &amp; pricing</div>
+      <div class="role-tag">INVENTORY · VALUATION</div>
+    </a>
+    <a class="role-card" href="trade-manager.html">
+      <span class="role-icon">📈</span>
+      <div class="role-title">Trade Manager</div>
+      <div class="role-desc">Execute trades, submit buy/sell requests, manage records</div>
+      <div class="role-tag">TRADING · ORDERS</div>
+    </a>
+    <a class="role-card" href="auditor.html">
+      <span class="role-icon">🔍</span>
+      <div class="role-title">Auditor</div>
+      <div class="role-desc">Review reports, approve stock updates, issue compliance recommendations</div>
+      <div class="role-tag">AUDIT · COMPLIANCE</div>
+    </a>
+    <a class="role-card" href="compliance.html">
+      <span class="role-icon">⚖️</span>
+      <div class="role-title">Compliance Officer</div>
+      <div class="role-desc">Receive compliance reviews, issue regulatory policy updates</div>
+      <div class="role-tag">REGULATORY · POLICY</div>
+    </a>
+    <a class="role-card" href="fraud-analyst.html">
+      <span class="role-icon">🛡️</span>
+      <div class="role-title">Fraud Analyst</div>
+      <div class="role-desc">Investigate suspicious transactions, flag patterns, submit findings</div>
+      <div class="role-tag">FRAUD · RISK</div>
+    </a>
+  </div>
+  <div class="landing-footer">
+    Group 5 &nbsp;·&nbsp; Financial Institutions' Management System &nbsp;·&nbsp; Buy &amp; Sell Stock Rich Picture
+  </div>
+</div>
+</body>
+</html>
