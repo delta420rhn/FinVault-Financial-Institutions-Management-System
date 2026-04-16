@@ -5,14 +5,10 @@ require 'db.php';
 try {
     $stmt = $pdo->query("
         SELECT 
-            stock_id, 
-            symbol, 
-            company_name, 
-            sector,
-            shares_available, 
-            price_per_share,
-            market_value, 
-            status
+            stock_id,
+            symbol,
+            shares_available AS quantity,
+            price_per_share AS price
         FROM stocks
         ORDER BY symbol
     ");

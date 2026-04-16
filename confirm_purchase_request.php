@@ -1,79 +1,54 @@
 <?php
-require_once 'config.php';
+header('Content-Type: application/json');
+require 'db.php';
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    echo json_encode(['error' => 'Method not allowed']);
-    exit();
-}
+$data = json_decode(file_get_contents("php://input"), true);
 
-$data = json_decode(file_get_contents('php://input'), true);
-if (!$data) {
-    $data = $_POST;
-}
-
-$request_id = (int)($data['request_id'] ?? 0);
-$action     = $data['action']     ?? '';   // 'confirm' or 'reject'
-$sm_note    = $data['sm_note']    ?? '';
-$confirmed_by = 1;  // Stock Manager user_id (Alice Rahman)
+$request_id = $data['request_id'] ?? null;
+$action     = $data['action'] ?? '';
+$note       = trim($data['sm_note'] ?? '');
+$sm_id      = 1;
 
 if (!$request_id || !in_array($action, ['confirm', 'reject'])) {
-    http_response_code(400);
-    echo json_encode(['error' => 'Invalid parameters']);
-    exit();
+    echo json_encode(["success" => false, "error" => "Invalid request"]);
+    exit;
 }
 
-$db = getDB();
+try {
+    if ($action === 'confirm') {
 
-// Fetch current stock price for confirmation
-$stmt = $db->prepare("
-    SELECT s.price_per_share, s.shares_available
-    FROM purchase_requests pr
-    JOIN stocks s ON pr.stock_id = s.stock_id
-    WHERE pr.request_id = ?
-");
-$stmt->bind_param('i', $request_id);
-$stmt->execute();
-$res = $stmt->get_result()->fetch_assoc();
-$stmt->close();
+        $stmt = $pdo->prepare("
+            UPDATE purchase_requests pr
+            JOIN stocks s ON pr.stock_id = s.stock_id
+            SET 
+                pr.status = 'Confirmed',
+                pr.confirmed_price = s.price_per_share,
+                pr.confirmed_by = ?,
+                pr.sm_note = ?,
+                pr.confirmed_at = NOW()
+            WHERE pr.request_id = ?
+        ");
 
-if (!$res) {
-    echo json_encode(['error' => 'Request not found']);
-    $db->close();
-    exit();
+        $stmt->execute([$sm_id, $note, $request_id]);
+
+    } else {
+
+        $stmt = $pdo->prepare("
+            UPDATE purchase_requests
+            SET 
+                status = 'Rejected',
+                confirmed_by = ?,
+                sm_note = ?,
+                confirmed_at = NOW()
+            WHERE request_id = ?
+        ");
+
+        $stmt->execute([$sm_id, $note, $request_id]);
+    }
+
+    echo json_encode(["success" => true]);
+
+} catch (Exception $e) {
+    echo json_encode(["success" => false, "error" => $e->getMessage()]);
 }
-
-if ($action === 'confirm') {
-    $confirmed_price = $res['price_per_share'];
-    $stmt = $db->prepare("
-        UPDATE purchase_requests
-        SET status = 'Confirmed',
-            confirmed_by = ?,
-            confirmed_price = ?,
-            sm_note = ?,
-            confirmed_at = NOW()
-        WHERE request_id = ? AND status = 'Pending'
-    ");
-    $stmt->bind_param('idsi', $confirmed_by, $confirmed_price, $sm_note, $request_id);
-} else {
-    $stmt = $db->prepare("
-        UPDATE purchase_requests
-        SET status = 'Rejected',
-            confirmed_by = ?,
-            sm_note = ?,
-            confirmed_at = NOW()
-        WHERE request_id = ? AND status = 'Pending'
-    ");
-    $stmt->bind_param('isi', $confirmed_by, $sm_note, $request_id);
-}
-
-$stmt->execute();
-$affected = $stmt->affected_rows;
-$stmt->close();
-$db->close();
-
-if ($affected > 0) {
-    echo json_encode(['success' => true, 'action' => $action]);
-} else {
-    echo json_encode(['error' => 'Update failed or request already processed']);
-}
+?>

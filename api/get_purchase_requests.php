@@ -16,19 +16,21 @@ try {
 
             s.symbol,
             s.company_name,
-            s.quantity AS shares_available,
-            s.price_per_share
+            s.shares_available,
+            s.price_per_share,
+
+            u.full_name AS requested_by_name
 
         FROM purchase_requests pr
         JOIN stocks s ON pr.stock_id = s.stock_id
+        JOIN users u ON pr.requested_by = u.user_id
+
         ORDER BY pr.requested_at DESC
     ");
 
-    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    echo json_encode($rows);
+    echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
 
 } catch (Exception $e) {
-    // Surface the real error during development
     echo json_encode(["error" => $e->getMessage()]);
 }
+?>

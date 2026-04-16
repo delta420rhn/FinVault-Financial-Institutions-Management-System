@@ -1,13 +1,25 @@
 <?php
-require_once 'config.php';
+header('Content-Type: application/json');
+require 'db.php';
 
-$db = getDB();
-$result = $db->query("SELECT stock_id, symbol, company_name, sector, shares_available, price_per_share, market_value, status FROM stocks ORDER BY symbol");
+try {
+    $stmt = $pdo->query("
+        SELECT 
+            stock_id,
+            symbol,
+            company_name,
+            sector,
+            shares_available,
+            price_per_share,
+            (shares_available * price_per_share) AS market_value,
+            status
+        FROM stocks
+        ORDER BY symbol
+    ");
 
-$stocks = [];
-while ($row = $result->fetch_assoc()) {
-    $stocks[] = $row;
+    echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+
+} catch (Exception $e) {
+    echo json_encode(["error" => $e->getMessage()]);
 }
-
-echo json_encode($stocks);
-$db->close();
+?>
